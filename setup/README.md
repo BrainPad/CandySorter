@@ -19,45 +19,65 @@ Instruction
     - Core-i3 or i5 (included in Intel NUC kit)
     - HDMI or mini HDMI cable is needed accordingly.
   - 2 x [8GB Memory](https://www.amazon.com/dp/B00CQ35HBQ))
-  - [SSD 250GB](https://www.amazon.com/dp/B0194MV5U8)（One of Sandisk’s long life (5 yrs) series is strongly recommended for price and stability. not samsung or other.）
+  - [SSD 250GB](https://www.amazon.com/dp/B0194MV5U8)（One of Sandisk’s long life (5 yrs) series is strongly recommended for price and stability）
 - Tablet UI
-  - Nexus9
-    - Microphone (internal or external)
-    - Chrome browser (to access linux box)
+  - Nexus 9 tablet
 - See [requirements.md](./requirements.md) for the full list.
 
-
 ## Step1 : Place hardware components and Marker sheet
-1. Print out [the marker sheet](./image/marker_paper.pdf) in A3 paper and stick it on the center
-(This sheet will be used during both setup and demo.)
-2. Build the robot arm by following manuals.
+1. Print out [the marker sheet](./image/marker_paper.pdf) in A3 paper and stick it on the center. This sheet will be used during both setup and demo.
+2. Set up the robot arm by following the manufacturer's manual.
+ - Attach the suction cup on the arm.
+ - In some cases, we experienced the robot's firmware beeing outdated. In such a case, DobotStudio is required to upgrade its firmware (See manuals).
 3. Place the robot arm to attach the A3 paper on A-D side.
 4. Plugin the power supply unit of the robot arm to AC outlet.
-5. Place the camera(CDVU-06IP) as shown below. In this case, camera should built with joint extender, CDVU-04IP-A1.
-Note: Due to unavailability of 'CDVU-04IP-A1' in some regions including japan, a small box of 27-32cm in height can be used instead.
+5. Place the camera (CDVU-06IP) as shown below. In this case, camera should built with joint extender CDVU-04IP-A1 Note: If you can't buy the extender in your region, any small box of with 27 - 32cm in height can be used instead.
 
 ![](./image/arrangement.png)
 ![](./image/robot_and_camera.png)
 
-## Step2 : Setup Linux box as controller PC.
-- Build your linux box by following direction of each manufacture.
-  - You might need to mount ssd and memory inside the linux box unless they are already built in.
-- Connect both the robot arm and the camera to linux box.
-  - The suction cup should be attached on arm end.
-  - In some cases, we experienced the robot's firmware beeing outdated. In such a case, DobotStudio is required to upgrade its firmware(See manuals).
-- Connect the linux box to the internet using LAN cable.
-- During setup you need  a LCD display, a keyboard and a mouse. please prepare.
-- Install linux and softwares
-  - Ubuntu 16.04.1 Server 64bit (You may also try Desktop 64bit, if your PC is well supported by Ubuntu.)
-    - See [linux box.md](./linux_box.md)
+## Step2 : Setup Linux Box (Controller PC)
+- Build the linux ox by following the instructions from manufacturers. Install the memory and SSD accordingly.
+- Connect the following components to the linux box.
+  - A HDMI display, keyboard and mouse to the linux box.
+  - The robot arm and the camera to linux box with USB cables.
+  - Ethernet hub with LAN cable for network connectivity.
+- Install Linux and softwares
+  - See [linux box.md](./linux_box.md) for details.
+
+#### Getting API credential.
+
+This demo requires API credential for Google Cloud Platform.
+
+- Create a new GCP project
+- Enable the following APIs
+  - Vision API (see also: https://cloud.google.com/vision/docs/quickstart)
+  - Natural Language API (see also: https://cloud.google.com/natural-language/docs/getting-started)
+  - CloudML API (see also: https://cloud.google.com/ml/docs/how-tos/getting-set-up)
+- Create a service account key file
+- See [this doc](https://cloud.google.com/vision/docs/common/auth#set_up_a_service_account) to create a service account key
+    - Service account: Compute Engine default service account
+    - Key type: JSON
+  - Save the JSON on ~/FindYourCandy/setup/script directory.
+- Execute the following command (replace the path_to_your_own_credential_file with the actual JSON file path).
+
+```
+$ export GOOGLE_APPLICATION_CREDENTIALS="path_to_your_own_credential_file"
+```
 
 ## Step3: Camera Calibation
 The following instructions illustrates how to adjust the camera position.
 
-1. Boot up linux box and login to the desktop.
-2. Execute [(cd script ; python2 camera_tune.py)](./script/camera_tune.py) that is included in this demo software. And see the camera view in the window.
+1. Boot up the linux box and login to the desktop.
+2. Execute the following command. It will show the camera view in the desktop window.
+
+```
+> cd ./FindYourCandy/setup/script
+> python2 camera_tune.py
+```
+
 3. If you cannot see 'OK' sign in the window, tweak the camera or its extension and have whole image of A3 paper.
-   - You may also try to get better focus by switching the AF slide between S and C on the camera.
+   - You may also try to get better focus by switching the AF slide on the camera head between S and C.
    - In most cases, keeping the slide to S and pressing `[・] (focus)` button a few times does good in our environment.
 4. You may click on left mouse button to exit this software.
 
@@ -65,7 +85,14 @@ The following instructions illustrates how to adjust the camera position.
 
 ## Step4: Robot Arm Caribration
 (* Read the safety manuals of your Robot Arm , befor proceeding this section.)
-1. Execute [(cd script ; python2 robot_tune.py)](./script/robot_tune.py) to start tuning the coordinates of arm.
+1. Execute the following command to start robot arm caribration.
+
+```
+> python2 robot_tune.py
+```
+
+  - If you get "dobot offline" message, please try upgrading the dobot firmware
+
 2. Hit `Enter` key to initialize the robot arm.
 3. Push the `release` button (which has symbol of `unlock` ) while you holding the robot arm by the other hand. Please be aware when the button is pressed, the robot arm looses friction and will start falling instantly. To avoid damaging your robot or desk, you should always assist robot arm when you press the `release` button.
 4. Slowly land the arm edge to the center of `Maker A`. (still pressing the button.)
@@ -85,17 +112,7 @@ https://support.google.com/chromecast/answer/2998456?hl=en)
 (* If you have a trouble with voice recognition of Nexus9, consider for external microphone.)
 
 ## Step6: Demo Application
-#### GCP for API service
 
-This demo is based on GCP. Create a credential associated to your project.
-Please enable follwoing services and set up API credential.
-- Vision API (see also: https://cloud.google.com/vision/docs/quickstart)
-- Natural Language API (see also: https://cloud.google.com/natural-language/docs/getting-started)
-- CloudML API (see also: https://cloud.google.com/ml/docs/how-tos/getting-set-up)
-
-```
-$ export GOOGLE_APPLICATION_CREDENTIALS="path_to_your_own_credential_file"
-```
 #### Configure and run demo
   - See [README.md](../robot-arm) for robot-arm
   - See [README.md](../webapp) for webapp
