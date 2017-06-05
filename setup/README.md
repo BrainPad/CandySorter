@@ -22,7 +22,7 @@ Instruction
   - [Intel NUC kit](https://www.amazon.com/dp/B01DG1SEES)
     - Core-i3 or i5 (included in Intel NUC kit)
     - HDMI or mini HDMI cable is needed accordingly.
-  - 2 x [8GB Memory](https://www.amazon.com/dp/B00CQ35HBQ))
+  - 16 GB RAM (2 x [8GB Memory](https://www.amazon.com/dp/B00CQ35HBQ))
   - [SSD 250GB](https://www.amazon.com/dp/B0194MV5U8)（One of Sandisk’s long life (5 yrs) series is strongly recommended for price and stability. not samsung or other.）
 - Tablet UI
   - Nexus9
