@@ -22,7 +22,7 @@ import json
 import sys
 
 import tensorflow as tf
-import cv2
+#import cv2
 
 INPUT_DATA_TENSOR_NAME = 'DecodeJpeg:0'
 FEATURE_TENSOR_NAME = 'pool_3/_reshape:0'
@@ -132,11 +132,15 @@ class FeaturesDataWriter(object):
 
     def write_features(self, features_data_path):
         with tf.gfile.FastGFile(features_data_path, 'w') as f:
+
+            progressCounter = 0
+
             for path, label_id in self.path_generator:
-                sys.stdout.write("\rprocessing image: {}".format(path))
+                sys.stdout.write("\rprocessing image: {}".format(str(path+" "+ str(progressCounter))))
                 sys.stdout.flush()
                 line = self.extract_data_for_path(path, label_id)
                 f.write(json.dumps(line) + '\n')
+                progressCounter += 1
 
     def extract_data_for_path(self, image_path, label_id):
         vector = self.extractor.get_feature_vectors_from_files([image_path])
@@ -156,31 +160,38 @@ def write_labels(labels, labels_data_path):
 
 def main():
     parser = argparse.ArgumentParser(description='Run Dobot WebAPI.')
-    parser.add_argument('output_dir', nargs=1, type=str)
-    parser.add_argument('--image_dir', type=str)
-    parser.add_argument('--model_file', type=str, default=None)
+    parser.add_argument('--output_dir', default ='output',nargs=1, type=str)
+    parser.add_argument('--image_dir_train', default='../image/train', type=str)
+    parser.add_argument('--image_dir_test', default='../image/test', type=str)
+    parser.add_argument('--model_file', type=str, default='classify_image_graph_def.pb')
     parser.add_argument('--for_prediction', action='store_true')
 
     args = parser.parse_args()
-    output_dir = args.output_dir[0]
+    output_dir = args.output_dir
 
     labels_file = os.path.join(output_dir, 'labels.json')
-    features_file = os.path.join(output_dir, 'features.json')
+    features_file_train = os.path.join(output_dir, 'trainfeatures.json')
+    features_file_test = os.path.join(output_dir, 'testfeatures.json')
     model_file = args.model_file
 
     if args.for_prediction:
-        path_gen = ImagePathGeneratorForPrediction(args.image_dir)
+        path_gen_train = ImagePathGeneratorForPrediction(args.image_dir_train)
+        path_gen_test = ImagePathGeneratorForPrediction(args.image_dir_test)
     else:
-        path_gen = ImagePathGeneratorForTraining(args.image_dir)
+        path_gen_train = ImagePathGeneratorForTraining(args.image_dir_train)
+        path_gen_test = ImagePathGeneratorForTraining(args.image_dir_test)
+
         logger.info("writing label file: {}".format(labels_file))
-        write_labels(path_gen.get_labels(), labels_file)
+        write_labels(path_gen_test.get_labels(), labels_file)
 
     extractor = FeatureExtractor(model_file)
-    writer = FeaturesDataWriter(path_gen, extractor)
+    writer_train = FeaturesDataWriter(path_gen_train, extractor)
+    writer_test = FeaturesDataWriter(path_gen_test, extractor)
 
-    logger.info("writing features file: {}".format(features_file))
-    writer.write_features(features_file)
-
+    logger.info("writing train features file: {}".format(features_file_train))
+    writer_train.write_features(features_file_train)
+    logger.info("writing test features file: {}".format(features_file_test))
+    writer_test.write_features(features_file_test)
 
 if __name__ == "__main__":
     main()

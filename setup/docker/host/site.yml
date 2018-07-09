@@ -1,0 +1,8 @@
+- hosts: all
+  become: yes
+  become_method: sudo
+  vars:
+    - apt_file: /etc/apt/sources.list.d/google-chrome.list
+  roles:
+    - chrome
+    - fyc

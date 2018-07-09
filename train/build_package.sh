@@ -8,7 +8,7 @@ fi
 rm -rf tmp output
 mkdir tmp output
 
-python2 setup.py \
+python3 setup.py \
   egg_info --egg-base tmp \
   build --build-base tmp --build-temp tmp \
   sdist --dist-dir output

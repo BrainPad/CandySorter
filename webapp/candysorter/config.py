@@ -21,7 +21,7 @@ import os
 from candysorter.ext.google.cloud import language
 
 
-# flake8: noqac
+# flake8: noqa
 class DefaultConfig(object):
     DEBUG = False
     TESTING = False
@@ -53,8 +53,12 @@ class DefaultConfig(object):
             'binary': False,
         },
     }
-    CLASSIFIER_MODEL_DIR         = os.path.join(MODEL_DIR, 'classifier')
-    CLASSIFIER_MODEL_DIR_INITIAL = os.path.join(MODEL_DIR, 'classifier_initial')
+
+    CLASSIFIER_DIR_NAME          = 'classifier'
+    CLASSIFIER_DIR_NAME_INITIAL  = 'classifier_initial'
+    CLASSIFIER_MODEL_DIR         = os.path.join(MODEL_DIR, CLASSIFIER_DIR_NAME)
+    CLASSIFIER_MODEL_DIR_INITIAL = os.path.join(MODEL_DIR, CLASSIFIER_DIR_NAME_INITIAL)
+
     INCEPTION_MODEL_FILE         = os.path.join(MODEL_DIR, 'classify_image_graph_def.pb')
 
     POS_WEIGHTS = {
@@ -80,7 +84,7 @@ class DefaultConfig(object):
     IMAGE_CAPTURE_DEVICE      = 0
     IMAGE_CAPTURE_WIDTH       = 1920
     IMAGE_CAPTURE_HEIGHT      = 1080
-    IMAGE_CAPTURE_BLUR_THRESH = 100
+    IMAGE_CAPTURE_BLUR_THRESH = 10
 
     IMAGE_CALIBRATOR_AREA  = (1625, 1100)
     IMAGE_CALIBRATOR_SCALE = 550
@@ -90,12 +94,13 @@ class DefaultConfig(object):
     TRAIN_LABEL_AREA_HEIGHT = 285
 
     # replace "YOUR-OWN-BUCKET-NAME" to your own bucket name
-    CLOUD_ML_BUCKET        = 'gs://{YOUR-OWN-BUCKET-NAME}'
-    CLOUD_ML_PACKAGE_URIS  = ['gs://{YOUR-OWN-BUCKET-NAME}/package/trainer-0.0.0.tar.gz']
-    CLOUD_ML_PYTHON_MODULE = 'trainer.train'
-    CLOUD_ML_TRAIN_DIR     = 'gs://{YOUR-OWN-BUCKET-NAME}/{job_id}/checkpoints'
-    CLOUD_ML_LOG_DIR       = 'gs://{YOUR-OWN-BUCKET-NAME}/logs/{job_id}'
-    CLOUD_ML_DATA_DIR      = 'gs://{YOUR-OWN-BUCKET-NAME}/{job_id}/features'
+    CLOUD_ML_BUCKET          = 'gs://sb-robotas'
+    CLOUD_ML_PACKAGE_URIS    = ['gs://sb-robotas/package/trainer-0.0.0.tar.gz']
+    CLOUD_ML_PYTHON_MODULE   = 'trainer.train'
+    CLOUD_ML_TRAIN_DIR       = 'gs://sb-robotas/{job_id}/checkpoints'
+    CLOUD_ML_LOG_DIR         = 'gs://sb-robotas/logs/{job_id}'
+    CLOUD_ML_DATA_DIR        = 'gs://sb-robotas/{job_id}/features'
+    CLOUD_ML_RUNTIME_VERSION = '1.0'
 
 
 class DevelopmentConfig(DefaultConfig):
@@ -104,7 +109,7 @@ class DevelopmentConfig(DefaultConfig):
 
     CLASS_TEXT_ANALYZER = 'candysorter.models.texts.FakeTextAnalyzer'
     CLASS_IMAGE_CAPTURE = 'candysorter.models.images.capture.FakeImageCapture'
-    DUMMY_IMAGE_FILE    = './candysorter/resources/data/candies_with_label_multi.jpg'
+    DUMMY_IMAGE_FILE    = os.path.join(DefaultConfig.RESOURCE_DIR, 'dummy_image.jpg')
 
 
 class StagingConfig(DefaultConfig):
@@ -121,10 +126,6 @@ _ENV_TO_CONFIG = {
     'prd': ProductionConfig,
 }
 
-Config = None
-
 
 def get_config(env):
-    global Config
-    Config = _ENV_TO_CONFIG[env]()
-    return Config
+    return _ENV_TO_CONFIG[env]()

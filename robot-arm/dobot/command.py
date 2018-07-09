@@ -102,7 +102,7 @@ class PacketParser(object):
 
 
 def checksum(payload):
-    return 0xFF & (0x100 - (sum([ord(c) for c in payload])))
+    return 0xFF & (0x100 - (sum([c for c in payload])))
 
 
 def ctrl(rw, is_queued):

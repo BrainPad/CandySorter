@@ -3,10 +3,8 @@ robot-arm (api)
 ===
 
 ## Note
-This software is designed to work with Python2.7 under following conditions:
+This software is designed to work with Python3.6 under following conditions:
 - This software depends on the following libraries:
-  - OpenCV3.2 (need to be compiled from source)
-    - Refer to [setup/README.md](../setup/README.md) for installation.
 - Environment variables
     ```
     export FLASK_ENV='prd'   # choices are 'prd', 'stg' or 'dev'
@@ -28,7 +26,7 @@ $ sudo systemctl start uwsgi-robot.service
 In this setup senario, the next command is not used. We use nginx+uWSGI instead.
 ```
 # Run app. This requres environment variables.
-$ python2 run_api.py  # Be sure to use python2.7
+$ python3 run_api.py  # Be sure to use python2.7
 ```
 
 ## API example

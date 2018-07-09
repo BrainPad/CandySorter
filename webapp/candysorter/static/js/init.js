@@ -5,25 +5,33 @@ $(function () {
 	var morUrl = "/api/morphs"; // API for Morphological analysis
 	var simUrl = "/api/similarities"; // API for Similarity analysis
 	var pickUrl = "/api/pickup"; // API for pick up candy
-	var simSec = 5000; // delay time
+    var simSec = 5000; // delay time
 	var simNoWaitNum = 5;
 	var plotSec = 5000; // display time of scatter plot(milisec）
-	var camSec = 3000; // display tiem of camera image(milisec)
+	var camSec = 7000; // display tiem of camera image(milisec)
 
 	// variables
 	var recognition = new webkitSpeechRecognition();
 	var lang = "en"; // language seting
-	var speechTxt = "I like chewy chocolate candy";
+	var speechTxt = "Can I have some chocolate";
 	var sim = "";
 	var winW = window.innerWidth;
 	var winH = window.innerHeight;
+	var examples = ["\"Kan jeg få sjokolade?\"","\"Jeg liker smurf\"","\"Kan jeg få lakris?\"", "\"Kan jeg få noe søtt?\""]
 
 	// process of voice recognition
+	/* DISABLED FOR TESTING */
 	var speech = function () {
 		$("body").addClass("mode-speech-start");
 		recognition.lang = lang;
 		$(".speech-mic").click(function () {
-			$("body").addClass("mode-speech-in");
+			$(".speech-mic").css({ // Changes the color of the mic-icon when clicked
+				background: "#ff5f63",
+				border: "solid 0 #ff5f63"
+				}
+			);
+            $(".speech-hand-animation").hide();
+            $("body").addClass("mode-speech-in");
 			recognition.start();
 		});
 		recognition.onerror = function () {
@@ -36,6 +44,47 @@ $(function () {
 			setTimeout(nl, 1500);
 		};
 	}
+
+
+// variable to keep track of last text displayed
+    var i = 0;
+    var textTimer = function() {
+        if (i >= examples.length) { i = 0; }
+        $("#example-text").fadeOut(1000, function(){
+            $(this).text(examples[i]);
+        });
+        $("#example-text").fadeIn();
+        i++;
+    }
+    $("#example-text").text(examples[i++]); // initialize with first quote
+    setInterval(textTimer, 3500);
+
+/*
+    var speech = function () {
+        $("body").addClass("mode-speech-start");
+        recognition.lang = lang;
+        $(".speech-mic").click(function () {
+            $(".speech-mic").css({ // Changes the color of the mic-icon when clicked
+                    background: "#ff5f63",
+                    border: "solid 0 #ff5f63"
+                }
+            );
+            $(".speech-footer").hide();
+            $(".speech-hand-animation").hide(); //Hide demo animation when record starts
+            $("body").addClass("mode-speech-in");
+            setTimeout(function () {
+                translation();
+                nl()
+            }, 1500);
+        });
+    }
+*/
+    var translation = function () {
+        var speechTran = "Kan jeg få sjokolade";
+        console.log(speechTran);
+
+
+    }
 
 	// switch language
 	$(".speech-lang a").click(function () {
@@ -103,7 +152,8 @@ $(function () {
 					var w = $(".nl-syntax dl:nth-child(" + (index + 1) + ")").outerWidth();
 					dependX.push(Math.round(x + w / 2));
 				});
-				// rearrange arrow
+
+                // rearrange arrow
 				$(".nl-depend dd").each(function (index) {
 					var from = $(this).data().from;
 					var to = $(this).data().to;
@@ -121,17 +171,24 @@ $(function () {
 						width: w + "px"
 					});
 				});
-				// effect settings
+				/*FOOTER LOADING ANIMATION*/
+				setInterval(function () {
+                    $(".nl-footer").show();
+                }, 1000);
+
+                // effect settings
 				$(".nl-word").each(function (index) {
 					$(this).css("transition-delay", index / 5 + "s");
 				});
 				$(".nl-tag, .nl-pos").each(function (index) {
 					$(this).css("transition-delay", 1 + index / 10 + "s");
 				});
-				$(".nl-label, .nl-depend dd").css("transition-delay", 2.5 + "s");
+				$(".nl-label, .nl-depend dd").css("transition-delay", 3 + "s"); //endret fra 2.5
 				$("body").addClass("mode-nl-loaded");
+
+                /*MAKES IT LOOK VERY CRASHED WHEN DISABLED WITHOUT FOOTER ANIMATION*/
 				// repeat effects
-				setInterval(function () {
+				/*setInterval(function () {
 					$("body").addClass("mode-nl-repeat");
 					setTimeout(function () {
 						$("body").removeClass("mode-nl-loaded");
@@ -140,7 +197,7 @@ $(function () {
 						$("body").addClass("mode-nl-loaded");
 						$("body").removeClass("mode-nl-repeat");
 					}, 500);
-				}, 6000);
+				}, 6000);*/
 			}
 		});
 		// retrieve inference data
@@ -168,7 +225,7 @@ $(function () {
 				setTimeout(function () {
 					force();
 					plot();
-				}, sec);
+				}, 10000);
 			}
 		});
 	};
@@ -222,6 +279,8 @@ $(function () {
 			.attr("class", function (d) {
 				return "label-" + d.lid;
 			});
+            console.log(dataSet.nodes[0].lid.toString());
+            console.log(dataSet.nodes[1].lid.toString());
 		var circle = g.append("circle")
 			.attr("r", function (d) {
 				var r = 50 + d.em * 100;
@@ -314,13 +373,13 @@ $(function () {
 		}
 		$(".plot dd:last-child").addClass("nearest");
 		// draw with time difference
-		setTimeout(function () {
+		setInterval(function () { //Changed from setTimeout, but unsure what that does :/
 			$("body").addClass("mode-plot-start");
-		}, 3000);
+		}, 5000); // VAR 3000;
 		setTimeout(function () {
 			$("body").addClass("mode-plot-end");
 			cam();
-		}, plotSec);
+		}, 7000);//plotSec); //This times how long the camera images should be presented next to the circles
 	};
 
 	// output camera image
@@ -350,26 +409,26 @@ $(function () {
 		// draw with time difference
 		setTimeout(function () {
 			$("body").addClass("mode-cam-start");
+			// operation of pickup
+			$.ajax({
+				type: "POST",
+				contentType: "application/json",
+				dataType: "json",
+				url: pickUrl,
+				data: JSON.stringify({
+					"id": pid
+				}),
+				error: function (textStatus) {
+					console.log(textStatus);
+				},
+				success: function (data) {
+					sim = data;
+				}
+			});
 		}, 2000);
 		setTimeout(function () {
 			thanks();
 		}, camSec);
-		// operation of pickup
-		$.ajax({
-			type: "POST",
-			contentType: "application/json",
-			dataType: "json",
-			url: pickUrl,
-			data: JSON.stringify({
-				"id": pid
-			}),
-			error: function (textStatus) {
-				console.log(textStatus);
-			},
-			success: function (data) {
-				sim = data;
-			}
-		});
 	};
 
 	// draw endroll

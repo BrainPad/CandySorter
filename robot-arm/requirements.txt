@@ -1,4 +1,2 @@
-Flask==0.12
+-r requirements/base.txt
 uWSGI==2.0.14
-numpy==1.12.0
-pyserial==3.2.1

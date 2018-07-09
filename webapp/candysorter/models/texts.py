@@ -18,8 +18,9 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import json
 import logging
 import os
+from webapp.candysorter.utils import get_classifier_dir
 
-from gensim.models import Word2Vec
+from gensim.models import KeyedVectors
 import numpy as np
 from scipy import spatial
 
@@ -45,9 +46,9 @@ class TextAnalyzer(object):
 
     @classmethod
     def from_config(cls, config):
-        return cls(params_file=os.path.join(config.CLASSIFIER_MODEL_DIR, 'params.json'),
-                   model_files=config.WORD2VEC_MODEL_FILES,
-                   pos_weights=config.POS_WEIGHTS)
+        return cls(params_file=os.path.join(get_classifier_dir(config), 'params.json'),
+                   model_files=config['WORD2VEC_MODEL_FILES'],
+                   pos_weights=config['POS_WEIGHTS'])
 
     def init(self):
         self._load_models()
@@ -60,7 +61,7 @@ class TextAnalyzer(object):
         self.models = {}
         for l, v in self.model_files.items():
             logger.info('Loading %s word2vec model...', l)
-            self.models[l] = Word2Vec.load_word2vec_format(v['file'], binary=v['binary'])
+            self.models[l] = KeyedVectors.load_word2vec_format(v['file'], binary=v['binary'])
             logger.info('Finished %s loading word2vec model.', l)
 
     def _load_labels(self):

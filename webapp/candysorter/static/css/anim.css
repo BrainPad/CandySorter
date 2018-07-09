@@ -162,3 +162,62 @@ stroke-dashoffset: 0;
 .mode-sorry-t-start .cap,
 .mode-sorry-t-start .train { height: 0; opacity: 0; }
 .mode-sorry-t-end .sorry { height: 100%; opacity: 1; }
+
+
+@keyframes blinking {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+@keyframes hand {
+    0% {
+        /* top:200px; */
+        opacity:0;
+        transform: translatex(350px) translatey(50px);
+        -webkit-animation-timing-function: ease-in;
+        animation-delay: 5s;
+    }
+    45% {
+        /*top: 0px;
+        left:-50px; */
+        transform: translatex(10px) translatey(-150px);
+        opacity:.6;
+        -webkit-animation-timing-function: ease-out;
+    }
+    55%{
+        transform: perspective(500px) translatex(10px) translatey(-150px) translateZ(-50px);
+        opacity: .8;
+    }
+    65% {
+        transform: translatex(10px) translatey(-150px);
+        -webkit-animation-timing-function: both;
+        opacity: .8;
+    }
+    75%{
+        opacity: .5;
+    }
+    100% {
+        opacity: 0;
+        transform: translatex(350px) translatey(50px);
+    }
+}
+
+@keyframes blink {
+
+    0% {
+        opacity: .2;
+    }
+    20% {
+        opacity: 1;
+    }
+    100% {
+        opacity: .2;
+    }
+}

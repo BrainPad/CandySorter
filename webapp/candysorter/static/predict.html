@@ -5,6 +5,7 @@
 <title>Find Your Candy</title>
 <link href="/static/js/manifest.json" rel="manifest">
 <link href="https://fonts.googleapis.com/css?family=Roboto:100,300" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Open+Sans" />
 <link href="/static/css/reset.css" rel="stylesheet">
 <link href="/static/css/style.css" rel="stylesheet">
 <link href="/static/css/anim.css" rel="stylesheet">
@@ -15,11 +16,17 @@
 <body>
 <div class="speech">
   <div class="speech-in">
+    <div class="speech-header"><img width="716px" src="/static/images/branding/Computas_logo_liggende_hvit.png"></div>
     <div class="speech-mic"><img src="/static/images/ico-mic.svg"></div>
   </div>
   <div class="speech-out"></div>
   <div class="speech-lang"><a href="#">EN</a></div>
-  <div class="speech-footer"><a href="/learn">SWITCH TO LEARNING</a></div>
+  <div class="speech-footer">
+    <p class="speech-hand-animation"><a href="#"></a><img src="/static/images/hand-pointer-regular_g.png" height="250px"></p>
+    <p id="example-text" style="font-size: 60px; bottom: 70px; opacity: .5;"></p>
+    <a href="/learn">BYTT TIL LÆRINGSMODUS</a>
+  </div>
+
 </div>
 <div class="nl">
   <div class="nl-inner">
@@ -27,6 +34,11 @@
     <div class="nl-syntax"></div>
   </div>
   <div class="nl-mask"></div>
+  <div class="nl-footer" hidden>
+    <p class="nl-footer">Web speech API</p><br><br>
+    <p class="saving" style="font-size: 86px; bottom: 30px"><span>.</span><span>.</span><span>.</span></p>
+   <!-- <p><a href="#"></a><img src="/static/images/speech_cloud.png" height="100px"></p> -->
+  </div>
 </div>
 <div class="cam">
   <div class="cam-img">
@@ -38,18 +50,21 @@
 <div class="plot"></div>
 <div class="force"></div>
 <div class="thanks">
-  <div>Do you like my choice of candy?</div>
-  <div>Thank you!</div>
+  <div>Likte du godteriet?</div> <!--TODO: Add functionality for feedback, correct/uncorrect?-->
+  <div>Tusen takk!</div>
   <div>
-    <p><a href="predict" class="btn">TRY AGAIN</a><br>
-      <a href="learn" class="btn btn-g">TRY LEARNING</a></p>
+    <p>
+      <a href="predict" class="btn">PRØV IGJEN</a><br>
+      <a href="learn" class="btn btn-g">PRØV LÆRINGSMODUS</a><br>
+      <a href="http://www.computas.no" class="btn btn-l"><img src="/static/images/branding/Computas_symbol_hvit.png" width="50%"></a><br>
+    </p><br>
   </div>
 </div>
 <div class="sorry">
   <div class="sorry-inner">
     <div>
-      <p>Sorry, something went wrong.</p>
-      <p><a href="predict" class="btn btn-g">TRY AGAIN</a></p>
+      <p>Beklager, noe gikk galt.</p>
+      <p><a href="predict" class="btn btn-g">PRØV IGJEN</a></p>
     </div>
   </div>
 </div>

@@ -3,10 +3,12 @@ webapp
 ===
 
 ## Note
-This software is designed to work with Python2.7 under following condtions:
+This software is designed to work with Python 3.6 under following condtions:
 - This software depends on the following libraries:
-  - OpenCV 3.2 (need to be compiled from source)
+  - OpenCV 3.4.1 (need to be compiled from source)
     - Refer to [installation instructions](../setup/linux_box.md), under _OpenCV3.2 installation_ for installation.
+    - Alternately, [this guide](https://www.pyimagesearch.com/2016/10/24/ubuntu-16-04-how-to-install-opencv/) has been used successfully. 
+    - On Windows, use Anaconda
   - Software you install with pip
   ```
   $ pip install -r requirements.txt

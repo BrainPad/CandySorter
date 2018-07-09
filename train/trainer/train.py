@@ -20,10 +20,12 @@ import json
 import logging
 import os
 import random
+#import csv
 
+import numpy as np
 import tensorflow as tf
 import time
-
+#import matplotlib.pyplot as plt
 import trainer.model as model
 from trainer.utils import TrainingFeaturesDataReader
 
@@ -44,6 +46,8 @@ class DataSet(object):
         data = reader.read_features()
         uris = reader.read_feature_metadata('image_uri')
         labels = reader.read_labels()
+        #print(data[0],  data[1], uris, labels)
+
         return cls(data[0], data[1], uris, labels)
 
     def n_samples(self):
@@ -88,6 +92,7 @@ class Trainer(object):
     def __init__(self, train_config, model_params, train_dir, log_dir):
         self.train_config = train_config
         self.model_params = model_params
+        #self.test_dir = test_dir
         self.train_dir = train_dir
         self.log_dir = log_dir
 
@@ -105,8 +110,8 @@ class Trainer(object):
     def _epoch_log_path(self, num_epoch):
         return os.path.join(self.log_dir, 'epochs', '{}.json'.format(str(num_epoch).zfill(6)))
 
-    def train(self, dataset):
-        n_samples = dataset.n_samples()
+    def train(self, trainingset):
+        n_samples = trainingset.n_samples()
 
         logger.info('Build transfer network.')
 
@@ -119,8 +124,14 @@ class Trainer(object):
 
         loss_log = []
         with tf.Session() as sess:
-            summary_writer = tf.train.SummaryWriter(self.log_dir, graph=sess.graph)
+            summary_writer = tf.summary.FileWriter(self.log_dir, graph=sess.graph)
             sess.run(tf.initialize_all_variables())
+
+            losses = []
+            accuracies = []
+            accuracies_train = []
+            fails_on_image = []
+            thought_label_was = []
 
             for epoch in range(self.train_config.epochs):
                 # Shuffle data for batching
@@ -128,39 +139,53 @@ class Trainer(object):
                 random.shuffle(shuffled_idx)
                 for begin_idx in range(0, n_samples, self.train_config.batch_size):
                     batch_idx = shuffled_idx[begin_idx: begin_idx + self.train_config.batch_size]
-                    sess.run(self.train_op, self.model.feed_for_training(*dataset.get(batch_idx)))
+                    sess.run(self.train_op, self.model.feed_for_training(*trainingset.get(batch_idx)))
 
                 # Print and write summaries.
                 in_sample_loss, summary = sess.run(
                     [self.model.loss_op, self.model.summary_op],
-                    self.model.feed_for_training(*dataset.all())
+                    self.model.feed_for_training(*trainingset.all())
                 )
+
                 loss_log.append(in_sample_loss)
+                losses.append(in_sample_loss)
 
                 summary_writer.add_summary(summary, epoch)
 
                 if epoch % 100 == 0 or epoch == self.train_config.epochs - 1:
                     logger.info('{}th epoch end with loss {}.'.format(epoch, in_sample_loss))
 
-                if self._needs_logging(loss_log):
+#-------- Accuracy for test set:
+
+                if False:
                     features = sess.run(
                         [self.model.softmax_op],
-                        self.model.feed_for_training(*dataset.all())
+                        self.model.feed_for_training(*testingset.all()) #feed testing data
                     )
 
-                    # write loss and predicted probabilities
-                    probs = map(lambda a: a.tolist(), features[0])
+                    # write loss and predicted probabilities Test
+                    probs = list(map(lambda a: a.tolist(), features[0]))
+                    averageAccuracy = 0
                     max_l = max(loss_log)
                     loss_norm = [float(l) / max_l for l in loss_log]
+
                     with tf.gfile.FastGFile(self._epoch_log_path(epoch), 'w') as f:
                         data = {
                             'epoch': epoch,
                             'loss': loss_norm,
                         }
                         probs_with_uri = []
+                        correctCount = 0
 
                         for i, p in enumerate(probs):
-                            meta = dataset.get_meta(i)
+                            meta = testingset.get_meta(i) # metadata for testing
+                            predicted = np.argmax(p)
+                            if predicted == int(meta['lid']):
+                                correctCount += 1
+                            elif epoch == 47 :
+                                fails_on_image.append(meta['url'])
+                                thought_label_was.append(predicted)
+
                             item = {
                                 'probs': p,
                                 'url': meta['url'],
@@ -171,6 +196,49 @@ class Trainer(object):
                             }
                             probs_with_uri.append(item)
 
+                        averageAccuracy += correctCount/len(probs)
+                        accuracies.append(averageAccuracy)
+                        data['probs'] = probs_with_uri
+                        f.write(json.dumps(data))
+
+#-------- Accuracy for training set:
+
+                if True:
+                    features = sess.run(
+                        [self.model.softmax_op],
+                        self.model.feed_for_training(*trainingset.all())  # feed training data
+                    )
+
+                    # write loss and predicted probabilities
+                    probs = list(map(lambda a: a.tolist(), features[0]))
+                    averageAccuracy = 0
+                    max_l = max(loss_log)
+                    loss_norm = [float(l) / max_l for l in loss_log]
+                    with tf.gfile.FastGFile(self._epoch_log_path(epoch+1000), 'w') as f:
+                        data = {
+                            'epoch': epoch+1000,
+                            'loss': loss_norm,
+                        }
+                        probs_with_uri = []
+                        correctCount = 0
+
+                        for i, p in enumerate(probs):
+                            meta = trainingset.get_meta(i)  # metadata for training
+                            predicted = np.argmax(p)
+                            if predicted == int(meta['lid']):
+                                correctCount += 1
+                            item = {
+                                'probs': p,
+                                'url': meta['url'],
+                                'property': {
+                                    'label': meta['label'],
+                                    'lid': int(meta['lid'])
+                                }
+                            }
+                            probs_with_uri.append(item)
+
+                        averageAccuracy += correctCount / len(probs)
+                        accuracies_train.append(averageAccuracy)
                         data['probs'] = probs_with_uri
                         f.write(json.dumps(data))
 
@@ -178,8 +246,23 @@ class Trainer(object):
                 if epoch < 200 and loss_log[-1] > max(loss_log) * 0.01:
                     time.sleep(self._sleep_sec)
 
+            # writes accuracy for testing and training to a csv file for plotting
+            #with open('accuracies_per_epoch.csv', 'w+') as csv_file:
+            #    writer = csv.writer(csv_file, delimiter=',')
+            #    for i in range(len(accuracies)):
+            #        writer.writerow([i, float(accuracies_train[i]), float(accuracies[i])])
+
+            #ax = plt.subplot(111)
+            #ax.plot(losses, color='r', label="loss")
+            #ax.plot(accuracies, color='b', label="test accuracy")
+            #ax.plot(accuracies_train, color='y', label="train accuracy")
+
+            #ax.legend()
+            #plt.show()
+
             self.model.saver.save(sess, checkpoint_path, global_step=self.model.global_step)
             summary_writer.close()
+
 
     def _needs_logging(self, loss_log):
         if len(loss_log) < self._check_interval or len(loss_log) % self._check_interval != 0:
@@ -208,38 +291,44 @@ def main(_):
     logger.info('tf version: {}'.format(tf.__version__))
 
     parser = argparse.ArgumentParser(description='Run Dobot WebAPI.')
-    parser.add_argument('--batch_size', type=int, default=16)
-    parser.add_argument('--hidden_size', type=int, default=3, help="Number of units in hidden layer.")
-    parser.add_argument('--epochs', type=int, default=2000, help="Number of epochs of training")
+    parser.add_argument('--batch_size', type=int, default=8)
+    parser.add_argument('--hidden_size', type=int, default=2, help="Number of units in hidden layer.")
+    parser.add_argument('--epochs', type=int, default=50, help="Number of epochs of training")
     parser.add_argument('--learning_rate', type=float, default=1e-3)
-    parser.add_argument('--data_dir', type=str, default='data', help="Directory for training data.")
+    parser.add_argument('--data_dir', type=str, default='output', help="Directory for training data.")
+   # parser.add_argument('--test_dir', type=str, default='output', help="Directory for test data.")
     parser.add_argument('--log_dir', type=str, default='log', help="Directory for TensorBoard logs.")
     parser.add_argument('--train_dir', type=str, default='train', help="Directory for checkpoints.")
 
     args = parser.parse_args()
 
     data_dir = args.data_dir
-    reader = TrainingFeaturesDataReader(data_dir)
+  #  test_dir = args.test_dir
 
-    dataset = DataSet.from_reader(reader)
+    reader = TrainingFeaturesDataReader(data_dir, features_file_name='features.json')
+    #reader2 = TrainingFeaturesDataReader(test_dir, features_file_name='testfeatures.json')
+
+    trainingset = DataSet.from_reader(reader)
+    #testingset = DataSet.from_reader(reader2)
 
     train_config = TrainingConfig(
-        epochs=2000,
-        batch_size=16,
+        epochs=50,
+        batch_size=8,
         optimizer_class=tf.train.RMSPropOptimizer,
         optimizer_args={"learning_rate": 1e-3},
         keep_prob=1.0,
     )
 
     params = model.ModelParams(
-        labels=dataset.labels,
+        labels=trainingset.labels,
         hidden_size=args.hidden_size,
-        features_size=dataset.feature_size()
+        features_size=trainingset.feature_size()
     )
 
     trainer = Trainer(
         train_config=train_config,
         model_params=params,
+     #   test_dir=args.test_dir,
         train_dir=args.train_dir,
         log_dir=args.log_dir,
     )
@@ -256,8 +345,8 @@ def main(_):
     with tf.gfile.FastGFile(os.path.join(args.log_dir, 'training.json'), 'w') as f:
         f.write(train_config.to_json())
 
-    trainer.train(dataset)
-
+    #trainer.train(trainingset, testingset)
+    trainer.train(trainingset)
 
 if __name__ == '__main__':
     tf.app.run()

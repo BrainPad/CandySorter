@@ -26,18 +26,40 @@ from web.api import api
 from web.config import get_config
 
 
-def create_app(dobot_port, tuner_file):
-    config = get_config(os.getenv('FLASK_ENV', 'dev'), dobot_port)
+def create_app(dobot_port, tuner_file, instance_path):
+    app = Flask(__name__, instance_path=instance_path, instance_relative_config=True)
 
-    app = Flask(__name__)
-
-    app.config.from_object(config)
-    _configure_logging(app, config)
+    app.config.from_object(get_config(os.getenv('FLASK_ENV', 'dev'), dobot_port, tuner_file))
+    app.config.from_pyfile('config.py', silent=True)
+    _configure_logging(app)
     app.register_blueprint(api, url_prefix='/api')
+
     return app
 
 
-def _configure_logging(app, config):
+"""
+Removed file logging as this seems to cause issues with supervisor and docker
+'file_app': {
+                'class': 'logging.handlers.TimedRotatingFileHandler',
+                'formatter': 'default',
+                'filename': os.path.join(app.config['LOG_DIR'], 'app.log'),
+                'when': 'd',
+                'interval': 1,
+                'backupCount': 14,
+            },
+            'file_access': {
+                'class': 'logging.handlers.TimedRotatingFileHandler',
+                'formatter': 'access',
+                'filename': os.path.join(app.config['LOG_DIR'], 'access.log'),
+                'when': 'd',
+                'interval': 1,
+                'backupCount': 14,
+            },
+
+"""
+
+
+def _configure_logging(app):
     app.logger
     logging.config.dictConfig({
         'version': 1,
@@ -59,38 +81,21 @@ def _configure_logging(app, config):
                 'class': 'logging.StreamHandler',
                 'formatter': 'access',
             },
-            'file_app': {
-                'class': 'logging.handlers.TimedRotatingFileHandler',
-                'formatter': 'default',
-                'filename': os.path.join(config.LOG_DIR, 'app.log'),
-                'when': 'd',
-                'interval': 1,
-                'backupCount': 14,
-            },
-            'file_access': {
-                'class': 'logging.handlers.TimedRotatingFileHandler',
-                'formatter': 'access',
-                'filename': os.path.join(config.LOG_DIR, 'access.log'),
-                'when': 'd',
-                'interval': 1,
-                'backupCount': 14,
-            },
-
         },
         'loggers': {
             '': {
-                'level': config.LOG_LEVEL,
-                'handlers': ['file_app'] if not app.debug else ['console_app'],
+                'level': app.config['LOG_LEVEL'],
+                'handlers': ['console_app'] if not app.debug else ['console_app'],
                 'propagate': False,
             },
             'werkzeug': {
-                'level': config.LOG_LEVEL,
-                'handlers': ['file_access'] if not app.debug else ['console_access'],
+                'level': app.config['LOG_LEVEL'],
+                'handlers': ['console_access'] if not app.debug else ['console_access'],
                 'propagate': False,
             },
         },
         'root': {
-            'level': config.LOG_LEVEL,
-            'handlers': ['file_app'] if not app.debug else ['console_app'],
+            'level': app.config['LOG_LEVEL'],
+            'handlers': ['console_app'] if not app.debug else ['console_app'],
         },
     })

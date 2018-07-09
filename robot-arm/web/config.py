@@ -32,7 +32,7 @@ class DefaultConfig(object):
 
     DOBOT_SERIAL_PORT = None
     DOBOT_DEFAULT_BAUDRATE = 115200
-    DOBOT_Z_HIGH = 50.
+    DOBOT_Z_HIGH = 0.
     DOBOT_SERVE_XY = (0., -150.)
     DOBOT_MAX_VELOCITY = 300
     DOBOT_MAX_ACCERALATION = 300
@@ -58,14 +58,11 @@ _ENV_TO_CONFIG = {
     'prd': ProductionConfig,
 }
 
-Config = None
 
+def get_config(env, dobot_port, tuner_file):
+    config = _ENV_TO_CONFIG[env]()
 
-def get_config(env, dobot_port):
-    global Config
-    Config = _ENV_TO_CONFIG[env]()
+    config.DOBOT_SERIAL_PORT = dobot_port
+    config.DOBOT_COORDINATE_CONVERTER = CoordinateConverter.from_tuning_file(tuner_file)
 
-    Config.DOBOT_SERIAL_PORT = dobot_port
-    Config.DOBOT_COORDINATE_CONVERTER = CoordinateConverter.from_tuning_file()
-
-    return Config
+    return config
