@@ -35,5 +35,5 @@ docker run -it --rm \
   -e DISPLAY \
   -e FLASK_ENV=prd \
   -e GOOGLE_APPLICATION_CREDENTIALS=/opt/FindYourCandy/data/credentials.json \
-  brainpad/fyc-webapp \
-  /bin/bash -c 'cd /opt/FindYourCandy/setup/script && /usr/bin/python camera_tune.py'
+  computas/fyc-webapp \
+  /bin/bash -c 'cd /opt/FindYourCandy/setup/script && /usr/bin/python3 camera_tune.py'

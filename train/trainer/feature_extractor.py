@@ -162,6 +162,7 @@ def main():
     parser = argparse.ArgumentParser(description='Run Dobot WebAPI.')
     parser.add_argument('--output_dir', default ='output',nargs=1, type=str)
     parser.add_argument('--image_dir_train', default='../image/train', type=str)
+    parser.add_argument('--active_test_mode', default=False, help='Set True for testing')
     parser.add_argument('--image_dir_test', default='../image/test', type=str)
     parser.add_argument('--model_file', type=str, default='classify_image_graph_def.pb')
     parser.add_argument('--for_prediction', action='store_true')
@@ -170,28 +171,36 @@ def main():
     output_dir = args.output_dir
 
     labels_file = os.path.join(output_dir, 'labels.json')
-    features_file_train = os.path.join(output_dir, 'trainfeatures.json')
+    features_file_train = os.path.join(output_dir, 'features.json')
     features_file_test = os.path.join(output_dir, 'testfeatures.json')
+
+
     model_file = args.model_file
 
     if args.for_prediction:
         path_gen_train = ImagePathGeneratorForPrediction(args.image_dir_train)
-        path_gen_test = ImagePathGeneratorForPrediction(args.image_dir_test)
+        if (args.active_test_mode):
+            path_gen_test = ImagePathGeneratorForPrediction(args.image_dir_test)
     else:
         path_gen_train = ImagePathGeneratorForTraining(args.image_dir_train)
-        path_gen_test = ImagePathGeneratorForTraining(args.image_dir_test)
+        if args.active_test_mode :
+            path_gen_test = ImagePathGeneratorForTraining(args.image_dir_test)
 
         logger.info("writing label file: {}".format(labels_file))
-        write_labels(path_gen_test.get_labels(), labels_file)
+        write_labels(path_gen_train.get_labels(), labels_file)
 
     extractor = FeatureExtractor(model_file)
     writer_train = FeaturesDataWriter(path_gen_train, extractor)
-    writer_test = FeaturesDataWriter(path_gen_test, extractor)
+
 
     logger.info("writing train features file: {}".format(features_file_train))
     writer_train.write_features(features_file_train)
-    logger.info("writing test features file: {}".format(features_file_test))
-    writer_test.write_features(features_file_test)
+
+    if (args.active_test_mode):
+        features_file_test = os.path.join(output_dir, 'testfeatures.json')
+        writer_test = FeaturesDataWriter(path_gen_test, extractor)
+        logger.info("writing test features file: {}".format(features_file_test))
+        writer_test.write_features(features_file_test)
 
 if __name__ == "__main__":
     main()

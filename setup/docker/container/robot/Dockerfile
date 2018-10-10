@@ -5,8 +5,9 @@ ARG container_dir="setup/docker/container/robot"
 
 # Python libraries
 COPY robot-arm/requirements.txt robot-arm/
+COPY robot-arm/requirements robot-arm/requirements
 RUN set -ex \
-  && pip install -r robot-arm/requirements.txt \
+  && pip3 install -r robot-arm/requirements.txt \
   && rm -rf ~/.cache/pip
 
 # Nginx

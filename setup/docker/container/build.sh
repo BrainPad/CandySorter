@@ -5,7 +5,7 @@ cwd=$(dirname $0)
 fyc_home=$(cd ${cwd}/../../.. && pwd)
 
 usage() {
-  echo "Usage: ${0##*/} [base|opencv|robot|webapp]"
+  echo "Usage: ${0##*/} [base|opencv|robot|webapp|speech]"
 }
 
 if [ $# -lt 1 ]; then
@@ -14,7 +14,7 @@ if [ $# -lt 1 ]; then
 fi
 
 case "$1" in
-  base | opencv | robot | webapp)
+  base | opencv | robot | webapp | speech)
     repos="computas/fyc-$1"
     tag=$(date '+%Y%m%d%H%M')
 

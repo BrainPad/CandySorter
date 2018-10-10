@@ -11,7 +11,10 @@ $(function () {
 	var statTest = 0; // dummy variable for test（dev：1、prd：0）
 	var loadSec = 2000; //　Time lag for loading screen test (return to 0 in prd environment)
 
-	// variables
+
+    var config = new FycConfig();
+
+    // variables
 	var stepFlg = 0; // capture step
 	var capDat = []; // save capture data
 	var winW = window.innerWidth;
@@ -19,6 +22,7 @@ $(function () {
 
 	// processing capture mode
 	var cap = function () {
+
 		$("body").addClass("mode-cap-init");
 	};
 	$(".cap-start, .cap-retry").click(function () {

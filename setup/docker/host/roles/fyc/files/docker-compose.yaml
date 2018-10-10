@@ -18,3 +18,10 @@ services:
     volumes:
       - ./config/robot:/opt/FindYourCandy/config
       - ./data:/opt/FindYourCandy/data
+  speech:
+    image: computas/fyc-speech
+    ports:
+      - "18002:80"
+    volumes:
+      - ./config/robot:/opt/FindYourCandy/config
+      - ./data:/opt/FindYourCandy/data

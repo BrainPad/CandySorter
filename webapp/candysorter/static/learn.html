@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="no">
 <head>
 <meta charset="UTF-8">
 <title>Find Your Candy</title>
@@ -11,6 +11,7 @@
 <link href="/static/css/anim.css" rel="stylesheet">
 <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
 <script src="https://d3js.org/d3.v3.min.js"></script>
+  <script src="/static/js/config.js"></script>
 <script src="/static/js/learn.js"></script>
 </head>
 <body>
@@ -22,11 +23,11 @@
     <div class="cap-left"></div>
     <div class="cap-right">
       <div>
-        <p>Legg godteri og etiketter på bordet,<br>
+        <p class="localize" data-lang="instructtext">Legg godteri og etiketter på bordet,<br>
            og trykk start</p>
-        <p><a href="#" class="btn cap-start">START</a></p>
+        <p><a href="#" class="btn cap-start">Start</a></p>
       </div>
-      <div class="cap-footer"><a href="/predict">BYTT TIL DEMO-MODUS</a></div>
+      <div class="cap-footer"><a class="localize" data-lang="changetodemotext" href="/predict">BYTT TIL DEMO-MODUS</a></div>
     </div>
   </div>
   <div class="cap-steps">
@@ -40,12 +41,12 @@
     </div>
     <div class="cap-right">
       <div>
-        <p>STEG <span class="cap-step">1</span>/4</p>
-        <p><a href="#" class="btn cap-start">START NESTE</a></p>
-        <p><a href="#" class="btn cap-done">FERDIG</a></p>
-        <p><a href="#" class="btn btn-g cap-retry">PRØV IGJEN</a></p>
+        <p class="localize" data-lang="steptext">Steg <span class="cap-step">1</span>/4</p>
+        <p><a href="#" class="btn cap-start localize" data-lang="startnext">START NESTE</a></p>
+        <p><a href="#" class="btn cap-done localize" data-lang="finishtext">FERDIG</a></p>
+        <p><a href="#" class="btn btn-g cap-retry localize" data-lang="tryagain">PRØV IGJEN</a></p>
       </div>
-      <div class="cap-footer"><a href="/learn">AVBRYT</a></div>
+      <div class="cap-footer"><a class="localize" data-lang="canceltext" href="/learn">AVBRYT</a></div>
     </div>
   </div>
 </div>
@@ -61,7 +62,7 @@
     </svg>
   </div>
   <div class="train-txt">
-    <div>Forbereder CloudML</div>
+    <div class="localize" data-lang="preparecloudML">Forbereder CloudML</div>
   </div>
 </div>
 <div class="stat">
@@ -87,13 +88,13 @@
       </dl>
     </div>
   </div>
-  <div class="stat-btn"><a href="/learn" class="btn btn-g">PRØV IGJEN</a><a href="/predict" class="btn">PRØV DEMO-MODUS</a></div>
+  <div class="stat-btn"><a href="/learn" class="btn btn-g localize" data-lang="tryagain">PRØV IGJEN</a><a href="/predict" class="btn localize" data-lang="changetodemotext">PRØV DEMO-MODUS</a></div>
 </div>
 <div class="sorry">
   <div class="sorry-inner">
     <div>
-      <p>Beklager, noe gikk galt.</p>
-      <p><a href="/learn" class="btn btn-g">PRØV IGJEN</a></p>
+      <p class="localize" data-lang="sorrytext">Beklager, noe gikk galt.</p>
+      <p><a href="/learn" class="btn btn-g localize" data-lang="tryagain">PRØV IGJEN</a></p>
     </div>
   </div>
 </div>

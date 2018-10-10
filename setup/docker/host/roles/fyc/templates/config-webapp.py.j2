@@ -27,14 +27,14 @@ WORD2VEC_MODEL_FILES = {
         'file': os.path.join(MODEL_DIR, 'GoogleNews-vectors-negative300.bin.gz'),
         'binary': True,
     },
-#    'ja': {
-#        'file': os.path.join(MODEL_DIR, 'model.vec'),
-#        'binary': False,
-#    },
 }
 INCEPTION_MODEL_FILE = os.path.join(MODEL_DIR, 'classify_image_graph_def.pb')
 
-PICKUP_ENDOPOINT = 'http://robot/api/pickup'
+CLOUD_ML_BUCKET       = 'gs://{{cloud_ml_bucket}}'
+CLOUD_ML_PACKAGE_URIS = ['gs://{{cloud_ml_bucket}}/package/trainer-0.0.0.tar.gz']
+CLOUD_ML_TRAIN_DIR    = 'gs://{{cloud_ml_bucket}}/{job_id}/checkpoints'
+CLOUD_ML_LOG_DIR      = 'gs://{{cloud_ml_bucket}}/logs/{job_id}'
+CLOUD_ML_DATA_DIR     = 'gs://{{cloud_ml_bucket}}/{job_id}/features'
 
 CLOUD_ML_BUCKET       = 'gs://{{cloud_ml_bucket}}'
 CLOUD_ML_PACKAGE_URIS = ['gs://{{cloud_ml_bucket}}/package/trainer-0.0.0.tar.gz']

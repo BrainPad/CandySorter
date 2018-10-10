@@ -17,7 +17,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 import logging
 import os
-from webapp.candysorter.utils import get_classifier_dir
+from candysorter.utils import get_classifier_dir
 
 import tensorflow as tf
 

@@ -57,6 +57,9 @@ class ImageCalibrator(object):
             self._prev_valid_corners = corners
             return corners
 
+        if len(marker_coords) == 0:
+            raise RuntimeError('No markers detected')
+
         # Use _prev_valid_corners if exists
         if self._prev_valid_corners is not None:
             # Check the camera is not moved

@@ -1,5 +1,5 @@
 # Step 1: Hardware setup
-1. Print out [the marker sheet](./image/marker_paper.pdf) in A3 paper and stick it on the center
+1. Print out [the marker sheet](./setup/image/marker_paper.pdf) in A3 paper and stick it on the center
 (This sheet will be used during both setup and demo.)
 2. Build the robot arm by following manuals.
 3. Place the robot arm to attach the A3 paper on A-D side.
@@ -37,6 +37,17 @@ $ mkdir -p _installationfiles/models
 ###  Setting up the Google Cloud Platform access
 
 
+#### Install gsutil
+To install gsutil (python application for managing google could storage) it is easier to just install the google cloud SKD
+
+```
+$ cd ~
+$ curl https://sdk.cloud.google.com | bash
+```
+
+Close and reopen the shell for the changes to take effect.
+
+#### Setup account and APIs
 #### Install gsutil
 To install gsutil (python application for managing google could storage) it is easier to just install the google cloud SKD
 
@@ -86,7 +97,7 @@ This demo requires API credential for Google Cloud Platform(GCP). If this is you
 7. Reopen the shell so that it takes effect
 
 
-## Models
+### Models
 
 ### English word vector
 1. Download https://drive.google.com/file/d/0B7XkCwpI5KDYNlNUTTlSS21pQmM 
@@ -98,6 +109,7 @@ $ wget http://download.tensorflow.org/models/image/imagenet/inception-2015-12-05
 $ tar xvzf inception-2015-12-05.tgz
 ```
 Copy the .pb file to _installationfiles/models
+
 
 
 ## Using Ansible to install requrements and move scripts
@@ -117,12 +129,18 @@ fyc_home={root directory of Find your candy}
 cloud_ml_bucket={the name of the Cloud Storage Bucket you created previously}
 ```
 
+```
+$ ./setup.sh hosts.file
+```
+
+
 ### Execute the ansible script
 ```
 $ ./setup.sh hosts.file
 ```
 
 This script will install Chrome, create required folders and move requried scripts. It will also build the docker images from source. 
+
 
 
 ### Upload ML model to Google Cloud storage 
@@ -152,6 +170,10 @@ $ bin/tune_robot.sh
 ```
 $ bin/start_all.sh
 ```
-Note that even though the command returns immediately, the webapp will take some time to start the first time
+Note that even though the command returns immediately, the webapp will take some time to start the first time.
+To see the log output of the services, use the command
+```
+$ bin/tail_logs.sh
+```
 
 Go to settings and ensure that the correct microphone/input is selected, as this is often an issue it seems. 

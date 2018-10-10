@@ -23,14 +23,15 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
-vision_client = vision.Client()
+
 
 
 class Candy(object):
-    def __init__(self, box_coords, box_dims, box_centroid, cropped_img):
+    def __init__(self, box_coords, box_dims, box_centroid, box_rotation, cropped_img):
         self.box_coords = box_coords
         self.box_dims = box_dims
         self.box_centroid = box_centroid
+        self.box_rotation = box_rotation
         self.cropped_img = cropped_img
 
 
@@ -70,20 +71,36 @@ class CandyDetector(object):
 
     @classmethod
     def from_config(cls, config):
-        return cls(histgram_band=config['CANDY_DETECTOR_HISTGRAM_BAND'],
-                   histgram_thres=config['CANDY_DETECTOR_HISTGRAM_THRES'],
-                   bin_thres=config['CANDY_DETECTOR_BIN_THRES'],
-                   edge3_thres=config['CANDY_DETECTOR_EDGE3_THRES'],
-                   edge5_thres=config['CANDY_DETECTOR_EDGE5_THRES'],
-                   margin=config['CANDY_DETECTOR_MARGIN'],
-                   closing_iter=config['CANDY_DETECTOR_CLOSING_ITER'],
-                   opening_iter=config['CANDY_DETECTOR_OPENING_ITER'],
-                   erode_iter=config['CANDY_DETECTOR_ERODE_ITER'],
-                   dilate_iter=config['CANDY_DETECTOR_DILATE_ITER'],
-                   bg_size_filter=config['CANDY_DETECTOR_BG_SIZE_FILTER'],
-                   sure_fg_thres=config['CANDY_DETECTOR_SURE_FG_THRES'],
-                   restore_fg_thres=config['CANDY_DETECTOR_RESTORE_FG_THRES'],
-                   box_dim_thres=config['CANDY_DETECTOR_BOX_DIM_THRES'])
+        if config['CANDY_TYPE'] == 0:
+            return cls(histgram_band=config['TWIST_CANDY_DETECTOR_HISTGRAM_BAND'],
+                histgram_thres=config['TWIST_CANDY_DETECTOR_HISTGRAM_THRES'],
+                bin_thres=config['TWIST_CANDY_DETECTOR_BIN_THRES'],
+                edge3_thres=config['TWIST_CANDY_DETECTOR_EDGE3_THRES'],
+                edge5_thres=config['TWIST_CANDY_DETECTOR_EDGE5_THRES'],
+                margin=config['TWIST_CANDY_DETECTOR_MARGIN'],
+                closing_iter=config['TWIST_CANDY_DETECTOR_CLOSING_ITER'],
+                opening_iter=config['TWIST_CANDY_DETECTOR_OPENING_ITER'],
+                erode_iter=config['TWIST_CANDY_DETECTOR_ERODE_ITER'],
+                dilate_iter=config['TWIST_CANDY_DETECTOR_DILATE_ITER'],
+                bg_size_filter=config['TWIST_CANDY_DETECTOR_BG_SIZE_FILTER'],
+                sure_fg_thres=config['TWIST_CANDY_DETECTOR_SURE_FG_THRES'],
+                restore_fg_thres=config['TWIST_CANDY_DETECTOR_RESTORE_FG_THRES'],
+                box_dim_thres=config['TWIST_CANDY_DETECTOR_BOX_DIM_THRES'])
+        else:
+            return cls(histgram_band=config['CANDY_DETECTOR_HISTGRAM_BAND'],
+                histgram_thres=config['CANDY_DETECTOR_HISTGRAM_THRES'],
+                bin_thres=config['CANDY_DETECTOR_BIN_THRES'],
+                edge3_thres=config['CANDY_DETECTOR_EDGE3_THRES'],
+                edge5_thres=config['CANDY_DETECTOR_EDGE5_THRES'],
+                margin=config['CANDY_DETECTOR_MARGIN'],
+                closing_iter=config['CANDY_DETECTOR_CLOSING_ITER'],
+                opening_iter=config['CANDY_DETECTOR_OPENING_ITER'],
+                erode_iter=config['CANDY_DETECTOR_ERODE_ITER'],
+                dilate_iter=config['CANDY_DETECTOR_DILATE_ITER'],
+                bg_size_filter=config['CANDY_DETECTOR_BG_SIZE_FILTER'],
+                sure_fg_thres=config['CANDY_DETECTOR_SURE_FG_THRES'],
+                restore_fg_thres=config['CANDY_DETECTOR_RESTORE_FG_THRES'],
+                box_dim_thres=config['CANDY_DETECTOR_BOX_DIM_THRES'])
 
     def detect(self, img):
         img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -198,20 +215,22 @@ class CandyDetector(object):
             _, _contours, _ = cv2.findContours(temp, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             contour = _contours[0]
 
-            box_coords, box_dims, box_centroid = _bounding_box_of(contour)
+            box_coords, box_dims, box_centroid, box_rotation = _bounding_box_of(contour)
             if any([dim <= self.box_dim_thres for dim in box_dims]):
                 continue
-            cropped_img = _crop_candy(img, markers != i, box_coords, box_dims, box_centroid)
+            cropped_img = _crop_candy(img, markers != i, box_dims, box_centroid, box_rotation)
+
 
             candies.append(Candy(box_coords=box_coords,
                                  box_dims=box_dims,
                                  box_centroid=box_centroid,
+                                 box_rotation=box_rotation,
                                  cropped_img=cropped_img))
 
         return candies
 
 
-def _crop_candy(img, mask, box_coords, box_dims, box_centroid):
+def _crop_candy(img, mask, box_dims, box_centroid, box_rotation):
 
     # White out other than candy
     _img = img.copy()
@@ -221,26 +240,19 @@ def _crop_candy(img, mask, box_coords, box_dims, box_centroid):
     h, w, _ = _img.shape
     center = (w / 2, h / 2)
 
-    # Get bounding box coordinates
-    x1, y1 = box_coords[0]  # top-left
-    x2, y2 = box_coords[1]  # top-right
-
     # Get bounding box dimensions
     pw = box_dims[0]
     ph = box_dims[1]
 
-    # Determine angle of rotation (in degrees)
-    # FIXME: x1 == x2
-    angle = np.arctan((y2 - y1) / (x2 - x1)) * 180 / np.pi
 
-    # Center of bounding pox
+    # Center of bounding box
     tx, ty = box_centroid
 
     # Translation matrix to move candy to center of image
     trans_mat = np.float32([[1, 0, -tx + w / 2], [0, 1, -ty + h / 2], [0, 0, 1]])
 
     # Rotation matrix
-    rot_mat = cv2.getRotationMatrix2D(center, angle, 1)
+    rot_mat = cv2.getRotationMatrix2D(center, box_rotation, 1)
     rot_mat = np.vstack((rot_mat, [0, 0, 1]))
 
     # Translation+Rotation matrix
@@ -279,10 +291,20 @@ def _bounding_box_of(contour):
     box_dims = rotbox[1]
     box_centroid = int((left[0][0] + right[1][0]) / 2.0), int((left[0][1] + right[1][1]) / 2.0)
 
-    return box_coords, box_dims, box_centroid
+    # Get bounding box coordinates
+    x1, y1 = box_coords[0]  # top-left
+    x2, y2 = box_coords[1]  # top-right
+
+    # Determine angle of rotation (in degrees)
+    box_rotation = 0
+    if x1 != x2:
+        box_rotation = np.arctan((y2 - y1) / (x2 - x1)) * 180 / np.pi
+
+    return box_coords, box_dims, box_centroid, box_rotation
 
 
 def detect_labels(img):
+    vision_client = vision.Client()
     image = vision_client.image(content=cv2.imencode('.jpg', img)[1].tostring())
     try:
         texts = image.detect_text()

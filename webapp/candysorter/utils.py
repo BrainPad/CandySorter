@@ -32,7 +32,7 @@ def load_class(name):
 def get_classifier_dir(config):
     if platform.system() == 'Windows':
         with open(config['CLASSIFIER_MODEL_DIR']) as f:
-            return os.path.join(config['MODEL_DIR'], f.readline())
+            return os.path.join(config['CANDY_MODEL_DIR'], f.readline())
     else:
         return config['CLASSIFIER_MODEL_DIR']
 
@@ -43,7 +43,7 @@ def update_classifier_dir(config, job_id):
         with open(config['CLASSIFIER_MODEL_DIR'], 'w') as f:
             f.write(folder_name)
     else:
-        new_dir = os.path.join(config['MODEL_DIR'], folder_name)
+        new_dir = os.path.join(config['CANDY_MODEL_DIR'], folder_name)
         symlink_force(new_dir, config['CLASSIFIER_MODEL_DIR'])
 
 def reset_classifier_dir(config):

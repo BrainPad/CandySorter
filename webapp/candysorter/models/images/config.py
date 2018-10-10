@@ -12,3 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+
+
+CAM_DEVICE = 0
+CAM_HEIGHT = 1080
+CAM_WIDTH = 1920
+
+
+TWIST_CANDIES = ['banan', 'caramel', 'chocolate_toffee', 'cocos', 'daim','eclairs', 'fransk_nougat', 'golden_toffee', 'japp', 'lakrids',  'marsipan', 'nougat_crisp', 'notti']
+BOX_CANDIES = ['chocolate','gum','liquorice','smurf']

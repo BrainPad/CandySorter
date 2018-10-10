@@ -1,70 +1,109 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="no">
 <head>
-<meta charset="UTF-8">
-<title>Find Your Candy</title>
-<link href="/static/js/manifest.json" rel="manifest">
-<link href="https://fonts.googleapis.com/css?family=Roboto:100,300" rel="stylesheet">
-    <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Open+Sans" />
-<link href="/static/css/reset.css" rel="stylesheet">
-<link href="/static/css/style.css" rel="stylesheet">
-<link href="/static/css/anim.css" rel="stylesheet">
-<script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
-<script src="https://d3js.org/d3.v3.min.js"></script>
-<script src="/static/js/init.js"></script>
+  <meta charset="UTF-8">
+  <title>Find Your Candy</title>
+  <link href="/static/js/manifest.json" rel="manifest">
+  <link href="https://fonts.googleapis.com/css?family=Roboto:100,300" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Open+Sans" />
+  <link href="/static/css/reset.css" rel="stylesheet">
+  <link href="/static/css/style.css" rel="stylesheet">
+  <link href="/static/css/anim.css" rel="stylesheet">
+  <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+  <script src="https://d3js.org/d3.v3.min.js"></script>
+  <script src="/static/js/config.js"></script>
+  <script src="/static/js/speech_stream.js"></script>
+  <script src="/static/js/pause.js"></script>
+  <script src="/static/js/he.js"></script>
+  <script src="/static/js/init.js"></script>
 </head>
-<body>
+<body class="">
+<div class="pauseIcon">
+    <svg class="progress" width="40" height="40" viewBox="0 0 40 40">
+    </svg>
+    <img src="">
+</div>
 <div class="speech">
   <div class="speech-in">
-    <div class="speech-header"><img width="716px" src="/static/images/branding/Computas_logo_liggende_hvit.png"></div>
-    <div class="speech-mic"><img src="/static/images/ico-mic.svg"></div>
+    <div class="speech-header"><img height="100px" src="/static/images/branding/Computas_logo_liggende_blue.png"></div>
+    <div class="speech-mic"><img src="/static/images/branding/mic-blue.png"></div>
+    
   </div>
   <div class="speech-out"></div>
-  <div class="speech-lang"><a href="#">EN</a></div>
-  <div class="speech-footer">
-    <p class="speech-hand-animation"><a href="#"></a><img src="/static/images/hand-pointer-regular_g.png" height="250px"></p>
-    <p id="example-text" style="font-size: 60px; bottom: 70px; opacity: .5;"></p>
-    <a href="/learn">BYTT TIL LÆRINGSMODUS</a>
+  <div class="speech-lang">
+    <a id="settBtn" href="/settings"><img height="35px" src="/static/images/branding/cog-solid_blue.png"></a>
   </div>
-
+  <div class="speech-interim">
+    <p id="speech-interim-text" style="font-size: 40px; bottom: 70px; opacity: .5;">
+      
+    </p>
+  </div> 
+  <div class="speech-footer">
+    <p id="example-text" style="font-size: 40px; bottom: 70px; opacity: .5;"></p>
+  </div>
+  <img class="speech-hand-animation" src="/static/images/hand.png" height="400px">
+</div>
+<div class="tran">
+  <div class="general-header"><img height="100px" src="/static/images/branding/Computas_symbol_blue.png"></div>
+  <div class ="tran-word"></div>
+  <div class="tran-footer" hidden>
+    <p class="tran-footer localize" data-lang="tranfoottext">Cloud Translate API: Oversetter</p><br><br>
+    <p class="working" style="font-size: 86px; bottom: 30px"><span>.</span><span>.</span><span>.</span></p>
+  </div>
 </div>
 <div class="nl">
+  <div class="general-header"><img height="100px" src="/static/images/branding/Computas_symbol_blue.png"></div>
   <div class="nl-inner">
     <div class="nl-depend"></div>
     <div class="nl-syntax"></div>
   </div>
   <div class="nl-mask"></div>
   <div class="nl-footer" hidden>
-    <p class="nl-footer">Web speech API</p><br><br>
-    <p class="saving" style="font-size: 86px; bottom: 30px"><span>.</span><span>.</span><span>.</span></p>
-   <!-- <p><a href="#"></a><img src="/static/images/speech_cloud.png" height="100px"></p> -->
+    <p class="nl-footer localize" data-lang="nlfoottext">Cloud Natural language API: Analyserer</p><br><br>
+    <p class="working" style="font-size: 86px; bottom: 30px"><span>.</span><span>.</span><span>.</span></p>
   </div>
 </div>
 <div class="cam">
   <div class="cam-img">
+      <div class="cam-footer" hidden>
+          <p class="cam-footer localize" data-lang="camfoottext">Bildeanalyse</p><br><br>
+          <p class="working" style="font-size: 86px; bottom: 30px"><span>.</span><span>.</span><span>.</span></p>
+      </div>
     <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 0 0">
-      <polygon points="0,0 0,0 0,0 0,0 "/>
+      /*Cam UI - might not keep this*/
+      <line x1="25" y1="30" x2="250" y2="30"/>
+      <line x1="30" y1="35" x2="30" y2="250"/>
+      <line x1="1590" y1="30" x2="1375" y2="30"/>
+      <line x1="1595" y1="25" x2="1595" y2="250"/>
+      <line x1="25" y1="1070" x2="250" y2="1070"/>
+      <line x1="30" y1="1065" x2="30" y2="850"/>
+      <line x1="1590" y1="1070" x2="1375" y2="1070"/>
+      <line x1="1595" y1="1075" x2="1595" y2="850"/>
+      /* /Cam UI*/
     </svg>
   </div>
 </div>
 <div class="plot"></div>
-<div class="force"></div>
+<div class="force">
+  <div class="force-footer" hidden>
+    <p class="force-footer">Word2vec Similarity</p>
+  </div>
+  <div class="general-header"><img height="100px" src="/static/images/branding/Computas_symbol_blue.png"></div>
+</div>
 <div class="thanks">
-  <div>Likte du godteriet?</div> <!--TODO: Add functionality for feedback, correct/uncorrect?-->
-  <div>Tusen takk!</div>
   <div>
-    <p>
-      <a href="predict" class="btn">PRØV IGJEN</a><br>
-      <a href="learn" class="btn btn-g">PRØV LÆRINGSMODUS</a><br>
-      <a href="http://www.computas.no" class="btn btn-l"><img src="/static/images/branding/Computas_symbol_hvit.png" width="50%"></a><br>
-    </p><br>
+    <img src="/static/images/branding/Computas_logo_liggende_blue.png" height="175px"><br>
+    <p id="endtext">
+      <span class="endtext" id="textend"></span>
+      <a href="predict" class="btn localize" style="position: center;" data-lang="tryagain">PRØV IGJEN</a><br>
+    </p>
   </div>
 </div>
 <div class="sorry">
   <div class="sorry-inner">
     <div>
-      <p>Beklager, noe gikk galt.</p>
-      <p><a href="predict" class="btn btn-g">PRØV IGJEN</a></p>
+      <p class="localize" data-lang="sorrytext">Beklager, noe gikk galt.</p>
+      <p><a href="predict" class="btn btn-g localize" data-lang="tryagain">PRØV IGJEN</a></p>
     </div>
   </div>
 </div>

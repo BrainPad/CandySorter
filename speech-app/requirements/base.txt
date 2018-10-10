@@ -1,0 +1,3 @@
+google-cloud-speech
+janus
+websockets

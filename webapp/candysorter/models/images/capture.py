@@ -16,12 +16,11 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import time
-
 import cv2
 
 
 class ImageCapture(object):
-    def __init__(self, device, width, height, blur_thres=100):
+    def __init__(self, device, width, height, blur_thres=1):
         self.device = device
         self.width = width
         self.height = height
@@ -39,11 +38,13 @@ class ImageCapture(object):
         capture.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
         capture.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
 
+
         if not capture.isOpened():
             raise Exception('Failed to open camera capture.')
 
         for _ in range(0, 10):
             ret, img = capture.read()
+
             if not ret or self._blur_index(img) < self.blur_thres:
                 time.sleep(0.5)
                 continue
@@ -51,7 +52,7 @@ class ImageCapture(object):
             return img
 
         capture.release()
-        raise Exception('Failed to capture image.')
+        raise Exception('Failed to capture an sufficiently crisp image. No image was above blur threshold')
 
     def _blur_index(self, img):
         img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -67,4 +68,8 @@ class FakeImageCapture(object):
         return cls(img_file=config['DUMMY_IMAGE_FILE'])
 
     def capture(self):
-        return cv2.imread(self.img_file)
+        img = cv2.imread(self.img_file)
+        if img is None:
+            raise FileNotFoundError("Could not find the fake image")
+        else:
+            return img

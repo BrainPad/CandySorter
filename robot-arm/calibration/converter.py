@@ -22,7 +22,7 @@ from calibration.adjust import AdjustForPictureToRobot
 
 
 class CoordinateConverter(object):
-    def __init__(self, from_points, to_points, z_low=-69):
+    def __init__(self, from_points, to_points, z_low=-31, r=0):
         """
         find T that meets x_robot = T x_logical
         """
@@ -39,18 +39,23 @@ class CoordinateConverter(object):
 
         self.mat_transform = np.dot(self.mat_x_to.T, inv_x)
         self.z_low = z_low
+        self.r_offset = r
 
-    def convert(self, x, y):
+    def convert(self, x, y, r = None):
         xy_trans = AdjustForPictureToRobot()
         x, y = xy_trans.adjust(x, y)
 
         from_vector = np.array([x, y, 1])
         transformed = np.dot(from_vector, self.mat_transform.T)
 
-        return transformed[0], transformed[1]
+        if r is None:
+            return transformed[0], transformed[1]
+        else:
+            adjusted_r = r + self.r_offset
+            return transformed[0], transformed[1], adjusted_r
 
     @classmethod
-    def from_tuning_file(cls, file_, z_low_pad=5):
+    def from_tuning_file(cls, file_, z_low_pad=1):
         tuner_data = []
         with open(file_, 'r') as readfile:
             for line in readfile:
@@ -59,11 +64,16 @@ class CoordinateConverter(object):
                 data = json.loads(line)
                 tuner_data.append(data)
 
-        z_low = sum([d['z'] for d in tuner_data])/3 + z_low_pad
+        # Find z low by averaging the measured z's
+        z_low = sum([d['z'] for d in tuner_data[:3]])/3 + z_low_pad
+        # If there is a fourth line, it contains the r-offset.
+        r = 0 if len(tuner_data) < 4 else tuner_data[3]['r']
+
         return cls(
             [(-0.3, 1.5), (-0.3, -1.5), (0.3, 0)],
             [(tuner_data[0]['x'], tuner_data[0]['y']),
              (tuner_data[1]['x'], tuner_data[1]['y']),
              (tuner_data[2]['x'], tuner_data[2]['y'])],
-            z_low=z_low
+            z_low=z_low,
+            r=r
         )

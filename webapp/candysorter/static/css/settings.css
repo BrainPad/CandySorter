@@ -1,0 +1,164 @@
+@charset "UTF-8";
+/* all */
+html,
+body { margin:0; width: 100%; height: 100%; color: #003459; font-family: "Open Sans"; font-weight: 300; line-height: 1.5; background: #003459; -webkit-font-smoothing: antialiased; }
+
+input { font-size: 100%; }
+h1 { color: #003459; font-size: 36px; }
+p { font-size: 25px; }
+a { font-size: 25px; color: #003459; text-decoration: underline; }
+* { box-sizing: border-box; }
+
+/* Custom Scrollbar */
+::-webkit-scrollbar { width: 10px;}
+::-webkit-scrollbar-track { box-shadow: inset 0 0 5px grey; border-radius: 5px;}
+::-webkit-scrollbar-thumb { background: #29cff5; border-radius: 5px; }
+::-webkit-scrollbar-thumb:hover { background: #2783a7; }
+
+/*main content container*/
+.container { padding: 50px; background-color: white; width: 50%; min-width: 750px; margin: 25px auto; border-radius: 10px; }
+.header { position: absolute; right: 8px; top:10px;  height: fit-content; }
+
+/* status icons container */
+.flex-container { display: flex; justify-content: space-around; }
+.flex-container img { height: 70px; justify-content: center; }
+.flex-container p { justify-content: center; height: 20px; margin: 0; font-size: 25px; }
+.flex-container > div {
+    height: 150px;
+    border-radius: 20px;
+    display: block;
+    background-color: #7B7B7B;
+    width: 200px;
+    text-align: center;
+    font-size: 30px;
+    align-content: center;
+    padding: 20px 0;
+}
+/*Settings container*/
+.settings { margin-top: 50px; }
+.settings-lang { font-size: 25px; }
+
+/*Selection container*/
+.grid-container {
+    display: grid;
+    grid-template-columns: 250px auto;
+    grid-template-rows: auto auto;
+    grid-gap: 10px;
+}
+.grid-container > div {
+    font-size: 25px;
+    margin: 0;
+}
+
+.grid-container p {
+    margin: 0;
+}
+
+/*Dropdown select*/
+.select {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 15px;
+    width: 100%;
+}
+.select select {
+    font-family: 'Open Sans';
+    font-size: 20px;
+    display: inline-block;
+    width: 300px;
+    cursor: pointer;
+    padding: 10px 15px;
+    outline: 0;
+    border: 0px solid #000000;
+    border-radius: 0px;
+    background: #E6E6E6;
+    color: #7B7B7B;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+}
+.select select::-ms-expand {
+    display: none;
+}
+.select select:hover,
+.select select:focus {
+    color: #000000;
+    background: #CCCCCC;
+}
+.select select:disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}
+.select_arrow {
+    position: absolute;
+    top: 16px;
+    left: 280px; /*BAD FIX, depends on select width*/
+    pointer-events: none;
+    border-style: solid;
+    border-width: 8px 5px 0px 5px;
+    border-color: #7B7B7B transparent transparent transparent;
+}
+
+.select select:disabled ~ .select_arrow {
+    border-top-color: #CCCCCC;
+}
+
+/*Editing text*/
+.edit { margin: 0 auto; justify-content: center; }
+.edit textarea {height: 100px; width: 100%; font-family: "Open Sans"; font-size: 21px; }
+
+.sendbutton {
+    display: inline-block;
+    padding: 5px 20px;
+    font-size: 24px;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    outline: none;
+    color: #fff;
+    background-color: #29cff5;
+    border: none;
+    border-radius: 10px;
+}
+
+.sendbutton:hover {background-color: #29cff5}
+
+.sendbutton:active {
+    background-color: #29cff5;
+    box-shadow: 0 5px #666;
+    transform: translateY(4px);
+}
+/*Timeouts container*/
+.timeouts-container {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-around;
+}
+.timeout-setting {
+    justify-content: space-around;
+    text-align: center;
+    align-content: center;
+    align-items: center;
+    max-width: 30%;
+}
+
+.timeout-setting img {
+    height: 150px;
+    border-radius: 10px;
+    display: block;
+    margin: auto;
+}
+
+.timeout-setting input {
+    margin-top: 10px;
+    max-width: 80%; 
+    font-family: "Open Sans";
+}
+
+.timeouts-container p {
+    margin: 10px;
+}
+
+/*Help container*/
+.help { margin-top: 50px; }

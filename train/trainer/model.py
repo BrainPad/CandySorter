@@ -85,7 +85,7 @@ class TransferModel(object):
             # add loss operation if initializing for training
             one_hot = tf.one_hot(self.label_ids, num_classes, name='target')
             self.loss_op = tf.reduce_mean(
-                tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=one_hot)
+                tf.nn.softmax_cross_entropy_with_logits_v2(logits=logits, labels=one_hot)
             )
 
         self.softmax_op = tf.nn.softmax(logits)

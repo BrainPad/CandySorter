@@ -48,16 +48,7 @@ class DefaultConfig(object):
             'file': os.path.join(MODEL_DIR, 'GoogleNews-vectors-negative300.bin.gz'),
             'binary': True,
         },
-        'ja': {
-            'file': os.path.join(MODEL_DIR, 'model.vec'),
-            'binary': False,
-        },
     }
-
-    CLASSIFIER_DIR_NAME          = 'classifier'
-    CLASSIFIER_DIR_NAME_INITIAL  = 'classifier_initial'
-    CLASSIFIER_MODEL_DIR         = os.path.join(MODEL_DIR, CLASSIFIER_DIR_NAME)
-    CLASSIFIER_MODEL_DIR_INITIAL = os.path.join(MODEL_DIR, CLASSIFIER_DIR_NAME_INITIAL)
 
     INCEPTION_MODEL_FILE         = os.path.join(MODEL_DIR, 'classify_image_graph_def.pb')
 
@@ -66,40 +57,72 @@ class DefaultConfig(object):
         language.PartOfSpeech.NOUN: 2.8,
     }
 
-    CANDY_DETECTOR_HISTGRAM_BAND    = (0, 255)
-    CANDY_DETECTOR_HISTGRAM_THRES   = 2.7e-3
-    CANDY_DETECTOR_BIN_THRES        = 150
-    CANDY_DETECTOR_EDGE3_THRES      = 250
-    CANDY_DETECTOR_EDGE5_THRES      = 230
-    CANDY_DETECTOR_MARGIN           = (30, 30)
-    CANDY_DETECTOR_CLOSING_ITER     = 2
-    CANDY_DETECTOR_OPENING_ITER     = 5
-    CANDY_DETECTOR_ERODE_ITER       = 25
-    CANDY_DETECTOR_DILATE_ITER      = 1
-    CANDY_DETECTOR_BG_SIZE_FILTER   = 2000
-    CANDY_DETECTOR_SURE_FG_THRES    = 10
-    CANDY_DETECTOR_RESTORE_FG_THRES = 0.0
-    CANDY_DETECTOR_BOX_DIM_THRES    = 50
+    # This setting will determine training parameters, as well as pickup type and classifier used.
+    CANDY_TYPE = 0  # 0=TWIST 1=BOX CANDY
 
-    IMAGE_CAPTURE_DEVICE      = 0
-    IMAGE_CAPTURE_WIDTH       = 1920
-    IMAGE_CAPTURE_HEIGHT      = 1080
+    if CANDY_TYPE == 0:
+        CANDY_MODEL_DIR = os.path.join(MODEL_DIR, "twist")
+    elif CANDY_TYPE == 1:
+        CANDY_MODEL_DIR = os.path.join(MODEL_DIR, "box_candy")
+
+    CLASSIFIER_DIR_NAME = 'classifier'
+    CLASSIFIER_DIR_NAME_INITIAL = 'classifier_initial'
+    CLASSIFIER_MODEL_DIR = os.path.join(CANDY_MODEL_DIR, CLASSIFIER_DIR_NAME)
+    CLASSIFIER_MODEL_DIR_INITIAL = os.path.join(CANDY_MODEL_DIR, CLASSIFIER_DIR_NAME_INITIAL)
+
+    CANDY_DETECTOR_HISTGRAM_BAND = (0, 255)
+    CANDY_DETECTOR_HISTGRAM_THRES = 2.7e-3
+    CANDY_DETECTOR_BIN_THRES = 150
+    CANDY_DETECTOR_EDGE3_THRES = 250
+    CANDY_DETECTOR_EDGE5_THRES = 230
+    CANDY_DETECTOR_MARGIN = (30, 30)
+    CANDY_DETECTOR_CLOSING_ITER = 2
+    CANDY_DETECTOR_OPENING_ITER = 5
+    CANDY_DETECTOR_ERODE_ITER = 25
+    CANDY_DETECTOR_DILATE_ITER = 1
+    CANDY_DETECTOR_BG_SIZE_FILTER = 2000
+    CANDY_DETECTOR_SURE_FG_THRES = 10
+    CANDY_DETECTOR_RESTORE_FG_THRES = 0.0
+    CANDY_DETECTOR_BOX_DIM_THRES = 140
+
+    TWIST_CANDY_DETECTOR_HISTGRAM_BAND = (0, 255)
+    TWIST_CANDY_DETECTOR_HISTGRAM_THRES = 2.7e-3
+    TWIST_CANDY_DETECTOR_BIN_THRES = 150
+    TWIST_CANDY_DETECTOR_EDGE3_THRES = 250
+    TWIST_CANDY_DETECTOR_EDGE5_THRES = 230
+    TWIST_CANDY_DETECTOR_MARGIN = (30, 30)
+    TWIST_CANDY_DETECTOR_CLOSING_ITER = 2
+    TWIST_CANDY_DETECTOR_OPENING_ITER = 5
+    TWIST_CANDY_DETECTOR_ERODE_ITER = 1
+    TWIST_CANDY_DETECTOR_DILATE_ITER = 1
+    TWIST_CANDY_DETECTOR_BG_SIZE_FILTER = 2000
+    TWIST_CANDY_DETECTOR_SURE_FG_THRES = 10
+    TWIST_CANDY_DETECTOR_RESTORE_FG_THRES = 0.0
+    TWIST_CANDY_DETECTOR_BOX_DIM_THRES = 100
+
+    IMAGE_CAPTURE_DEVICE = 1
+    IMAGE_CAPTURE_WIDTH = 1920
+    IMAGE_CAPTURE_HEIGHT = 1080
     IMAGE_CAPTURE_BLUR_THRESH = 10
 
-    IMAGE_CALIBRATOR_AREA  = (1625, 1100)
+    IMAGE_CALIBRATOR_AREA = (1625, 1100)
     IMAGE_CALIBRATOR_SCALE = 550
 
-    PICKUP_ENDOPOINT = 'http://localhost:18001/api/pickup'
+    PICKUP_TYPE = 'suction_cup' if CANDY_TYPE else "gripper"  # Use 'gripper' or 'suction_cup'
+    ROBOT_ARM_API_URL = 'http://robot/api'
+    ROBOT_ARM_STATUS_ENDPOINT = ROBOT_ARM_API_URL + '/status'
+    PICKUP_SUCTION_CUP_ENDPOINT = ROBOT_ARM_API_URL + '/pickup'
+    PICKUP_GRIPPER_ENDPOINT = ROBOT_ARM_API_URL + '/pickup/gripper'
 
     TRAIN_LABEL_AREA_HEIGHT = 285
 
     # replace "YOUR-OWN-BUCKET-NAME" to your own bucket name
-    CLOUD_ML_BUCKET          = 'gs://sb-robotas'
-    CLOUD_ML_PACKAGE_URIS    = ['gs://sb-robotas/package/trainer-0.0.0.tar.gz']
+    CLOUD_ML_BUCKET          = 'gs://YOUR-OWN-BUCKET-NAME'
+    CLOUD_ML_PACKAGE_URIS    = ['gs://YOUR-OWN-BUCKET-NAME/package/trainer-0.0.0.tar.gz']
     CLOUD_ML_PYTHON_MODULE   = 'trainer.train'
-    CLOUD_ML_TRAIN_DIR       = 'gs://sb-robotas/{job_id}/checkpoints'
-    CLOUD_ML_LOG_DIR         = 'gs://sb-robotas/logs/{job_id}'
-    CLOUD_ML_DATA_DIR        = 'gs://sb-robotas/{job_id}/features'
+    CLOUD_ML_TRAIN_DIR       = 'gs://YOUR-OWN-BUCKET-NAME/{job_id}/checkpoints'
+    CLOUD_ML_LOG_DIR         = 'gs://YOUR-OWN-BUCKET-NAME/logs/{job_id}'
+    CLOUD_ML_DATA_DIR        = 'gs://YOUR-OWN-BUCKET-NAME/{job_id}/features'
     CLOUD_ML_RUNTIME_VERSION = '1.0'
 
 
