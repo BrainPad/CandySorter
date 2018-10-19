@@ -1,0 +1,37 @@
+{
+  "box-candy": {
+    "stems": [
+      "",
+      "Kan jeg få",
+      "Jeg har lyst på",
+      "Jeg liker"
+    ],
+    "words": [
+      "sjokolade",
+      "lakris",
+      "smurf",
+      "tyggis",
+      "tyggegummi"
+    ]
+  },
+  "twist": {
+    "stems": [
+      "",
+      "Kan jeg få",
+      "Jeg har lyst på",
+      "Jeg liker"
+    ],
+    "words": [
+      "nøtti",
+      "nøtter",
+      "karamel",
+      "marsipan",
+      "japp",
+      "daim",
+      "cocos",
+      "kokkos",
+      "eclaires",
+      "toffee"
+    ]
+  }
+}

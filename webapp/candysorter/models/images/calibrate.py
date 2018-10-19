@@ -36,8 +36,8 @@ class ImageCalibrator(object):
 
     @classmethod
     def from_config(cls, config):
-        return cls(area=config.IMAGE_CALIBRATOR_AREA,
-                   scale=config.IMAGE_CALIBRATOR_SCALE)
+        return cls(area=config['IMAGE_CALIBRATOR_AREA'],
+                   scale=config['IMAGE_CALIBRATOR_SCALE'])
 
     def calibrate(self, img):
         corners = self.detect_corners(img)
@@ -56,6 +56,9 @@ class ImageCalibrator(object):
                 corners[label] = coord[0, 0]
             self._prev_valid_corners = corners
             return corners
+
+        if len(marker_coords) == 0:
+            raise RuntimeError('No markers detected')
 
         # Use _prev_valid_corners if exists
         if self._prev_valid_corners is not None:

@@ -18,6 +18,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import errno
 import importlib
 import os
+import platform
 import random
 import string
 
@@ -28,10 +29,35 @@ def load_class(name):
     return getattr(module, parts[-1])
 
 
+def get_classifier_dir(config):
+    if platform.system() == 'Windows':
+        with open(config['CLASSIFIER_MODEL_DIR']) as f:
+            return os.path.join(config['CANDY_MODEL_DIR'], f.readline())
+    else:
+        return config['CLASSIFIER_MODEL_DIR']
+
+
+def update_classifier_dir(config, job_id):
+    folder_name = 'classifier_{}'.format(job_id)
+    if platform.system() == 'Windows':
+        with open(config['CLASSIFIER_MODEL_DIR'], 'w') as f:
+            f.write(folder_name)
+    else:
+        new_dir = os.path.join(config['CANDY_MODEL_DIR'], folder_name)
+        symlink_force(new_dir, config['CLASSIFIER_MODEL_DIR'])
+
+def reset_classifier_dir(config):
+    if platform.system() == 'Windows':
+        with open(config['CLASSIFIER_MODEL_DIR'], 'w') as f:
+            f.write(config['CLASSIFIER_DIR_NAME_INITIAL'])
+    else:
+        symlink_force(os.path.basename(config['CLASSIFIER_MODEL_DIR_INITIAL']), config['CLASSIFIER_MODEL_DIR'])
+
+
 def symlink_force(source, link_name):
     try:
         os.symlink(source, link_name)
-    except OSError, e:
+    except OSError as e:
         if e.errno == errno.EEXIST:
             os.unlink(link_name)
             os.symlink(source, link_name)

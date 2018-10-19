@@ -3,11 +3,13 @@ webapp
 ===
 
 ## Note
-This software is design to work with Python2.7 under following condtion.
+This software is designed to work with Python 3.6 under following condtions:
 - This software depends on the following libraries:
-  - OpenCV3.2 (need to be compiled from source.)
-  - Refer to installation_instructions.md for installation.
-  - Softwares you install by pip
+  - OpenCV 3.4.1 (need to be compiled from source)
+    - Refer to [installation instructions](../setup/linux_box.md), under _OpenCV3.2 installation_ for installation.
+    - Alternately, [this guide](https://www.pyimagesearch.com/2016/10/24/ubuntu-16-04-how-to-install-opencv/) has been used successfully. 
+    - On Windows, use Anaconda
+  - Software you install with pip
   ```
   $ pip install -r requirements.txt
   # ex)
@@ -73,7 +75,8 @@ CLOUD_ML_DATA_DIR      = 'gs://{YOUR-OWN-BUCKET-NAME}/{job_id}/features'
 ```
 # replace {YOUR-OWN-BUCKET-NAME} to your own bukcet name
 $ cd ~/FindYourCandy/train
-$ bash build_package.sh gs://{YOUR-OWN-BUCKET-NAME}/package
+$ bash build_package.sh gs://{YOUR-OWN-BUCKET-NAME}/package/
+# make sure you have a trailing slash at the end of the command above
 ```
 
 ### Configuration files

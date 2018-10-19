@@ -27,7 +27,7 @@ QUEUE_SIZE = 32
 
 
 def dump_hex(s):
-    return ":".join("{:02x}".format(ord(c)) for c in s)
+    return ":".join("{:02x}".format(c) for c in s)
 
 
 class SerialCommunicator(object):

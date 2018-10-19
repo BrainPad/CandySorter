@@ -20,6 +20,7 @@ from functools import wraps
 import glob
 import logging
 import os
+import platform
 import shutil
 import string
 import time
@@ -33,20 +34,23 @@ from sklearn.decomposition import PCA
 from sklearn.preprocessing import MinMaxScaler
 
 from candysorter.cache import Cache
-from candysorter.config import Config
 from candysorter.ext.google.cloud.ml import State
+from candysorter.ext.google.cloud.auth import test_auth
 from candysorter.models.images.calibrate import ImageCalibrator
 from candysorter.models.images.classify import CandyClassifier
 from candysorter.models.images.detect import CandyDetector, detect_labels
 from candysorter.models.images.filter import exclude_unpickables
 from candysorter.models.images.train import CandyTrainer
-from candysorter.utils import load_class, random_str, symlink_force
+from candysorter.utils import load_class, random_str, symlink_force, reset_classifier_dir, update_classifier_dir
+from candysorter.ext.google.cloud.translation import TranslatorClient
 
 logger = logging.getLogger(__name__)
 
 api = Blueprint('api', __name__, url_prefix='/api')
+config = None
 cache = Cache()
 
+text_translator = None
 text_analyzer = None
 candy_detector = None
 candy_classifier = None
@@ -57,25 +61,31 @@ image_calibrator = None
 
 @api.record
 def record(state):
+    global config
+    config = state.app.config
+
     global text_analyzer
-    text_analyzer = load_class(Config.CLASS_TEXT_ANALYZER).from_config(Config)
+    text_analyzer = load_class(config['CLASS_TEXT_ANALYZER']).from_config(config)
     text_analyzer.init()
 
     global candy_detector
-    candy_detector = CandyDetector.from_config(Config)
+    candy_detector = CandyDetector.from_config(config)
 
     global candy_classifier
-    candy_classifier = CandyClassifier.from_config(Config)
+    candy_classifier = CandyClassifier.from_config(config)
     candy_classifier.init()
 
     global candy_trainer
-    candy_trainer = CandyTrainer.from_config(Config)
+    candy_trainer = CandyTrainer.from_config(config)
 
     global image_capture
-    image_capture = load_class(Config.CLASS_IMAGE_CAPTURE).from_config(Config)
+    image_capture = load_class(config['CLASS_IMAGE_CAPTURE']).from_config(config)
 
     global image_calibrator
-    image_calibrator = ImageCalibrator.from_config(Config)
+    image_calibrator = ImageCalibrator.from_config(config)
+
+    global text_translator
+    text_translator = TranslatorClient()
 
 
 @api.errorhandler(400)
@@ -100,7 +110,23 @@ def id_required(f):
             abort(400)
         g.id = id_
         return f(*args, **kwargs)
+
     return wrapper
+
+
+@api.route('/translate', methods=['POST'])
+@id_required
+def translate():
+    text = request.json.get('text')
+    if not text:
+        abort(400)
+
+    source_lang = request.json.get('source', None)
+    target_lang = request.json.get('target', 'en')
+
+    translation_result = text_translator.translate_text(text, source_lang=source_lang, target_lang=target_lang)
+
+    return jsonify(translation_result)
 
 
 @api.route('/morphs', methods=['POST'])
@@ -114,34 +140,68 @@ def morphs():
     logger.info('=== Analyze text: id=%s ===', g.id)
 
     tokens = text_analyzer.analyze_syntax(text, lang)
+
+    cache.set('text', text)
+    cache.set('lang', lang)
+    cache.set('tokens', tokens)
+
     return jsonify(morphs=[
-        dict(word=t.text.content,
-             depend=dict(label=t.dep.label, index=[
-                 _i for _i, _t in enumerate(tokens)
-                 if _i != i and _t.dep.index == i
-             ]),
-             pos=dict(tag=t.pos.tag, case=t.pos.case, number=t.pos.number))
+        dict(
+            word=t.text.content,
+            depend=dict(
+                label=t.dep.label,
+                index=[_i for _i, _t in enumerate(tokens) if _i != i and _t.dep.index == i]),
+            pos=dict(tag=t.pos.tag, case=t.pos.case, number=t.pos.number))
         for i, t in enumerate(tokens)
     ])
+
+
+def calculate_rotation(candy):
+    tl_x, tl_y = candy.box_coords[0]
+    br_x, br_y = candy.box_coords[2]
+    bl_x, bl_y = candy.box_coords[3]
+
+    length_left = np.sqrt(np.power(tl_x - bl_x, 2) + np.power(tl_y - bl_y, 2))
+    length_bottom = np.sqrt(np.power(br_x - bl_x, 2) + np.power(br_y - bl_y, 2))
+
+    if length_left < length_bottom:
+        return -1 * candy.box_rotation
+    else:
+        return -1 * (candy.box_rotation - 90)
 
 
 @api.route('/similarities', methods=['POST'])
 @id_required
 def similarities():
-    text = request.json.get('text')
-    if not text:
-        abort(400)
-    lang = request.json.get('lang', 'en')
-
-    logger.info('=== Calculate similarities: id=%s ===', g.id)
-
     # Session
     session_id = _session_id()
 
-    # Analyze text
-    logger.info('Analyaing text.')
     labels = text_analyzer.labels
-    tokens = text_analyzer.analyze_syntax(text, lang)
+
+    logger.info('=== Calculate similarities: id=%s ===', g.id)
+
+    # See if we already have analyzed the text
+    text = cache.get('text')
+    lang = cache.get('lang')
+    tokens = cache.get('tokens')
+
+    request_text = request.json.get('text')
+
+    if not tokens or not lang or text != request_text:
+        if not request_text:
+            abort(400)
+        lang = request.json.get('lang', 'en')
+
+        # Analyze text
+        logger.info('Analyzing text.')
+        tokens = text_analyzer.analyze_syntax(request_text, lang)
+
+        # Cache result for subsequent calls
+        cache.set('text', request_text)
+        cache.set('lang', lang)
+        cache.set('tokens', tokens)
+    else:
+        logger.info('Using cached text analysis')
 
     # Calculate speech similarity
     logger.info('Calculating speech similarity.')
@@ -149,12 +209,23 @@ def similarities():
 
     # Capture image
     logger.info('Capturing image.')
-    img = _capture_image()
+    try:
+        img = _capture_image()
+    except RuntimeError as e:
+        return _error_response("CAMERA", "Unable to detect barcodes and/or camera has been moved.", str(e))
+    except FileNotFoundError as e:
+        return _error_response("CAMERA", "Could not find the fake image specified in the config", str(e))
+    except Exception as e:
+        return _error_response("CAMERA", str(e))
 
     # Detect candies
     logger.info('Detecting candies.')
     candies = candy_detector.detect(img)
     logger.info('  %d candies detected.', len(candies))
+
+    if len(candies) == 0:
+        return _error_response("CANDY",
+                                "No candy detected on the table. Place candy on the table, or calibrate camera.")
 
     # Create image directory
     save_dir = _create_save_dir(session_id)
@@ -193,35 +264,47 @@ def similarities():
     # Save pickup point
     logger.info('Saving pickup point.')
     nearest_centroid = candies[nearest_idx].box_centroid
-    pickup_point = image_calibrator.get_coordinate(nearest_centroid[0], nearest_centroid[1])
-    cache.set('pickup_point', pickup_point)
+    if config['PICKUP_TYPE'] == 'suction_cup':
+        pickup_point = image_calibrator.get_coordinate(nearest_centroid[0], nearest_centroid[1])
+        cache.set('pickup_point', pickup_point)
+    elif config['PICKUP_TYPE'] == 'gripper':
+        pick_x, pick_y = image_calibrator.get_coordinate(nearest_centroid[0], nearest_centroid[1])
+        rotation = calculate_rotation(candies[nearest_idx])
+        cache.set('pickup_point', (pick_x, pick_y, rotation))
 
     # For json
     def _sim_as_json(sim):
-        return [dict(label=l, lid=i + 1, em=np.asscalar(s))
-                for i, (l, s) in enumerate(zip(labels, sim))]
+        return [
+            dict(label=l, lid=i + 1, em=np.asscalar(s))
+            for i, (l, s) in enumerate(zip(labels, sim))
+        ]
 
     def _coords_as_json(rsim):
         return list(rsim)
 
     def _box_as_json(box_coords):
-        return [[x.astype(int), y.astype(int)] for x, y in box_coords]
+        return [[int(x), int(y)] for x, y in box_coords]
+
+    def _centroid_as_json(center):
+        return list(center)
 
     return jsonify(similarities=dict(
         force=_sim_as_json(speech_sim),
         url=snapshot_url,
         embedded=[
-            dict(url=url,
-                 similarities=_sim_as_json(sim),
-                 coords=_coords_as_json(rsim),
-                 box=_box_as_json(candy.box_coords))
+            dict(
+                url=url,
+                similarities=_sim_as_json(sim),
+                coords=_coords_as_json(rsim),
+                box=_box_as_json(candy.box_coords),
+                center=_centroid_as_json(candy.box_centroid))
             for candy, sim, rsim, url in zip(candies, candy_sims, candy_rsims, candy_urls)
         ],
-        nearest=dict(url=candy_urls[nearest_idx],
-                     similarities=_sim_as_json(candy_sims[nearest_idx]),
-                     coords=_coords_as_json(candy_rsims[nearest_idx]),
-                     box=_box_as_json(candies[nearest_idx].box_coords)),
-    ))
+        nearest=dict(
+            url=candy_urls[nearest_idx],
+            similarities=_sim_as_json(candy_sims[nearest_idx]),
+            coords=_coords_as_json(candy_rsims[nearest_idx]),
+            box=_box_as_json(candies[nearest_idx].box_coords)), ))
 
 
 @api.route('/pickup', methods=['POST'])
@@ -234,7 +317,15 @@ def pickup():
     logger.info('=== Pickup candy: id=%s ===', g.id)
 
     logger.info('Picking candy. x=%f, y=%f', pickup_point[0], pickup_point[1])
-    requests.post(Config.PICKUP_ENDOPOINT, json=dict(x=pickup_point[0], y=pickup_point[1]))
+
+    if config['PICKUP_TYPE'] == 'suction_cup':
+        requests.post(config['PICKUP_SUCTION_CUP_ENDPOINT'],
+                      json=dict(x=pickup_point[0], y=pickup_point[1]))
+
+    elif config['PICKUP_TYPE'] == 'gripper':
+        requests.post(config['PICKUP_GRIPPER_ENDPOINT'],
+                      json=dict(x=pickup_point[0], y=pickup_point[1], r=pickup_point[2]))
+
     return jsonify()
 
 
@@ -283,8 +374,8 @@ def capture():
 
     # Crop label and candies
     logger.info('Cropping image.')
-    img_label = img[:Config.TRAIN_LABEL_AREA_HEIGHT]
-    img_candies = img[Config.TRAIN_LABEL_AREA_HEIGHT:]
+    img_label = img[:config['TRAIN_LABEL_AREA_HEIGHT']]
+    img_candies = img[config['TRAIN_LABEL_AREA_HEIGHT']:]
 
     # Save snapshot image
     logger.info('Saving snapshot image.')
@@ -385,13 +476,84 @@ def status():
         key = 'model_updated_{}'.format(job_id)
         if not cache.get(key):
             logger.info('Training completed, updating model: job_id=%s', job_id)
-            new_checkpoint_dir = candy_trainer.download_checkpoints(job_id)
-            symlink_force(os.path.basename(new_checkpoint_dir), Config.CLASSIFIER_MODEL_DIR)
+            candy_trainer.download_checkpoints(job_id)
+            update_classifier_dir(config, job_id)
             text_analyzer.reload()
             candy_classifier.reload()
             cache.set(key, True)
 
     return jsonify(status=status, loss=losses, embedded=embedded)
+
+
+@api.route('/status/auth', methods=['GET'])
+def status_auth():
+    """
+    Test status of the webapp. The camera is tested independently, so only auth and communication with the
+    robot arm is
+    """
+    # Check auth
+    try:
+        test_auth()
+    except Exception as e:
+        return _error_response('AUTH', 'Authentication with GCP failed.', str(e))
+
+    return jsonify(status="SUCCESS")
+
+
+@api.route('/status/camera', methods=['GET'])
+def status_camera():
+    """
+    Test the status of the camera by capturing an image, detecting corners and then detecting candies.
+    Not meant for calibrating/tuning the camera, just as a simple test that the camera is working.
+
+    Returns either a json with status set to success and number of candies detected, or
+    a message with status set to error, see _error_response() for format
+    """
+
+    logger.info('=== Check camera ===')
+
+    # Capture image
+    logger.info('Capturing image.')
+    try:
+        img = _capture_image()
+    except RuntimeError as e:
+        return _error_response("CAMERA", "Unable to detect barcodes and/or camera has been moved.", str(e))
+    except FileNotFoundError as e:
+        return _error_response("CAMERA", "Could not find the fake image specified in the config", str(e))
+    except Exception as e:
+        return _error_response("CAMERA", "", str(e))
+
+    # Detect candies
+    logger.info('Detecting candies.')
+    candies = candy_detector.detect(img)
+    logger.info('  %d candies detected.', len(candies))
+
+    return jsonify(status="SUCCESS", candy_count=len(candies))
+
+
+@api.route('/status/robot', methods=['GET'])
+def status_robot():
+    """
+    Check that the webapp is able to communicate with the robot, and return the robot state
+    """
+    try:
+        response = requests.get(config['ROBOT_ARM_STATUS_ENDPOINT'])
+        response_data = response.json()
+
+        if len(response_data['alarms']):
+            return jsonify(
+                status='ERROR',
+                error_type="ROBOT",
+                error="",
+                message="One or more alarms has been triggered on the robot. It might still function, but try  turning it on and off again.",
+                robot_status=response_data
+            ), 500
+
+        else:
+            return jsonify(status="SUCCESS", **response_data)
+
+    except Exception as e:
+        return _error_response("COMMUNICATION", "Cannot communicate with robot", str(e))
 
 
 @api.route('/_labels')
@@ -408,8 +570,7 @@ def reload():
 
 @api.route('/_reset', methods=['POST'])
 def reset():
-    symlink_force(os.path.basename(Config.CLASSIFIER_MODEL_DIR_INITIAL),
-                  Config.CLASSIFIER_MODEL_DIR)
+    reset_classifier_dir(config)
     text_analyzer.reload()
     candy_classifier.reload()
     return jsonify({})
@@ -421,20 +582,24 @@ def _session_id():
 
 
 def _capture_image(retry_count=5, retry_interval=0.1):
+    error = None
     for i in range(retry_count):
         try:
             img = image_capture.capture()
             img = image_calibrator.calibrate(img)
             return img
-        except Exception:
+        except FileNotFoundError:
+            raise
+        except (RuntimeError, Exception) as e:
+            error = e
             logger.warning('  Retrying: %d times.', (i + 1))
             time.sleep(retry_interval)
-    raise Exception('Failed to capture image.')
+    raise error
 
 
 def _create_save_dir(session_id):
     # e.g. 20170209_130952_reqid -> /tmp/download/image/20170209_130952_reqid/
-    d = os.path.join(Config.DOWNLOAD_IMAGE_DIR, session_id)
+    d = os.path.join(config['DOWNLOAD_IMAGE_DIR'], session_id)
     os.makedirs(d)
     return d
 
@@ -442,14 +607,17 @@ def _create_save_dir(session_id):
 def _candy_file(save_dir, i):
     # e.g. /tmp/download/image/20170209_130952_reqid/candy_01_xxxxxxxx.png
     return os.path.join(
-        save_dir,
-        'candy_{:02d}_{}.jpg'.format(i, random_str(8, string.lowercase + string.digits))
-    )
+        save_dir, 'candy_{:02d}_{}.jpg'.format(i, random_str(8, string.ascii_lowercase + string.digits)))
 
 
 def _image_url(image_file):
     # e.g. 20170209_130952_reqid/candy_01_xxxxxxxx.png
-    rel = os.path.relpath(image_file, Config.DOWNLOAD_IMAGE_DIR)
+    rel = os.path.relpath(image_file, config['DOWNLOAD_IMAGE_DIR'])
+
+    # On Windows, the url will not contain slash, but the encoded \ which will return a 404
+    # So we replace it with forward slash
+    if platform.system() == 'Windows':
+        rel = rel.replace('\\', '/')
 
     # e.g. /image/20170209_130952_reqid/candy_01_xxxxxxxx.png
     return url_for('ui.image', filename=rel)
@@ -467,3 +635,21 @@ def _reduce_dimension(speech_sim, candy_sims):
 
 def _job_id(session_id):
     return 'candy_sorter_{}'.format(session_id)
+
+
+def _error_response(err_type, msg, error=""):
+    """
+    Helper to format an error response in a predictable way.
+
+    Will return a response with the following fields:
+    - status: Always set to ERROR
+    - error_type: Used to denote a "class" of errors, ie. CAMERA or AUTH
+    - message: Should be a human readable message that describes the error and possible fixes
+    - error: The error as string, or a more technical error message.
+    """
+    return jsonify(
+        status='ERROR',
+        error_type=err_type,
+        error=error,
+        message=msg
+    ), 500

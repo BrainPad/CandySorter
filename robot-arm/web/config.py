@@ -17,6 +17,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 import logging
 import os
+import json
 
 from calibration.converter import CoordinateConverter
 
@@ -32,10 +33,10 @@ class DefaultConfig(object):
 
     DOBOT_SERIAL_PORT = None
     DOBOT_DEFAULT_BAUDRATE = 115200
-    DOBOT_Z_HIGH = 50.
-    DOBOT_SERVE_XY = (0., -150.)
-    DOBOT_MAX_VELOCITY = 300
-    DOBOT_MAX_ACCERALATION = 300
+    DOBOT_Z_HIGH = 60.
+    DOBOT_SERVE_XY = (0., -200., 20.)
+    DOBOT_MAX_VELOCITY = 200
+    DOBOT_MAX_ACCERALATION = 100
 
     DOBOT_COORDINATE_CONVERTER = None
 
@@ -58,14 +59,29 @@ _ENV_TO_CONFIG = {
     'prd': ProductionConfig,
 }
 
-Config = None
+
+def get_config(env, dobot_port, tuner_file):
+    config = _ENV_TO_CONFIG[env]()
+
+    config.DOBOT_SERIAL_PORT = dobot_port
+    config.DOBOT_COORDINATE_CONVERTER = CoordinateConverter.from_tuning_file(tuner_file)
+
+    serve_position = read_serve_location(tuner_file)
+    config.DOBOT_SERVE_XY = config.DOBOT_SERVE_XY if not serve_position else serve_position
+
+    return config
 
 
-def get_config(env, dobot_port):
-    global Config
-    Config = _ENV_TO_CONFIG[env]()
+def read_serve_location(tuner_file):
+    tuner_data = []
+    with open(tuner_file, 'r') as readfile:
+        for line in readfile:
+            if not line:
+                break
+            data = json.loads(line)
+            tuner_data.append(data)
 
-    Config.DOBOT_SERIAL_PORT = dobot_port
-    Config.DOBOT_COORDINATE_CONVERTER = CoordinateConverter.from_tuning_file()
-
-    return Config
+    if len(tuner_data) < 5:
+        return None
+    else:
+        return tuner_data[4]['x'], tuner_data[4]['y'], tuner_data[4]['z']

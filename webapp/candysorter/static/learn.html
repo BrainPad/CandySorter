@@ -1,15 +1,17 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="no">
 <head>
 <meta charset="UTF-8">
 <title>Find Your Candy</title>
 <link href="/static/js/manifest.json" rel="manifest">
 <link href="https://fonts.googleapis.com/css?family=Roboto:100,300" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Open+Sans" />
 <link href="/static/css/reset.css" rel="stylesheet">
 <link href="/static/css/style.css" rel="stylesheet">
 <link href="/static/css/anim.css" rel="stylesheet">
 <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
 <script src="https://d3js.org/d3.v3.min.js"></script>
+  <script src="/static/js/config.js"></script>
 <script src="/static/js/learn.js"></script>
 </head>
 <body>
@@ -21,11 +23,11 @@
     <div class="cap-left"></div>
     <div class="cap-right">
       <div>
-        <p>Please put labels and candies<br>
-          on the table, then start.</p>
-        <p><a href="#" class="btn cap-start">START</a></p>
+        <p class="localize" data-lang="instructtext">Legg godteri og etiketter på bordet,<br>
+           og trykk start</p>
+        <p><a href="#" class="btn cap-start">Start</a></p>
       </div>
-      <div class="cap-footer"><a href="/predict">SWITCH TO SERVING</a></div>
+      <div class="cap-footer"><a class="localize" data-lang="changetodemotext" href="/predict">BYTT TIL DEMO-MODUS</a></div>
     </div>
   </div>
   <div class="cap-steps">
@@ -39,12 +41,12 @@
     </div>
     <div class="cap-right">
       <div>
-        <p>STEP <span class="cap-step">1</span>/4</p>
-        <p><a href="#" class="btn cap-start">START NEXT</a></p>
-        <p><a href="#" class="btn cap-done">DONE</a></p>
-        <p><a href="#" class="btn btn-g cap-retry">RETRY</a></p>
+        <p class="localize" data-lang="steptext">Steg <span class="cap-step">1</span>/4</p>
+        <p><a href="#" class="btn cap-start localize" data-lang="startnext">START NESTE</a></p>
+        <p><a href="#" class="btn cap-done localize" data-lang="finishtext">FERDIG</a></p>
+        <p><a href="#" class="btn btn-g cap-retry localize" data-lang="tryagain">PRØV IGJEN</a></p>
       </div>
-      <div class="cap-footer"><a href="/learn">CANCEL</a></div>
+      <div class="cap-footer"><a class="localize" data-lang="canceltext" href="/learn">AVBRYT</a></div>
     </div>
   </div>
 </div>
@@ -53,14 +55,14 @@
   </dl>
   <div class="train-v3">
     <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 1024 360" >
-      <rect x="862" y="148" class="st0" width="20" height="60" style="stroke:#42A5F5;" />
-      <rect x="902" y="148" class="st1" width="20" height="60" style="stroke:#66BB6A;" />
-      <rect x="943" y="148" class="st2" width="20" height="60" style="stroke:#FFA726;" />
-      <rect x="983" y="148" class="st3" width="20" height="60" style="stroke:#EF5350;" />
+      <rect x="862" y="148" class="st0" width="20" height="60" style="stroke:#29cff5;" />
+      <rect x="902" y="148" class="st1" width="20" height="60" style="stroke:#49bca1;" />
+      <rect x="943" y="148" class="st2" width="20" height="60" style="stroke:#fed546;" />
+      <rect x="983" y="148" class="st3" width="20" height="60" style="stroke:#ff5f63;" />
     </svg>
   </div>
   <div class="train-txt">
-    <div>Preparing CloudML</div>
+    <div class="localize" data-lang="preparecloudML">Forbereder CloudML</div>
   </div>
 </div>
 <div class="stat">
@@ -86,13 +88,13 @@
       </dl>
     </div>
   </div>
-  <div class="stat-btn"><a href="/learn" class="btn btn-g">TRY AGAIN</a><a href="/predict" class="btn">TRY SERVING</a></div>
+  <div class="stat-btn"><a href="/learn" class="btn btn-g localize" data-lang="tryagain">PRØV IGJEN</a><a href="/predict" class="btn localize" data-lang="changetodemotext">PRØV DEMO-MODUS</a></div>
 </div>
 <div class="sorry">
   <div class="sorry-inner">
     <div>
-      <p>Sorry, something went wrong.</p>
-      <p><a href="/learn" class="btn btn-g">TRY AGAIN</a></p>
+      <p class="localize" data-lang="sorrytext">Beklager, noe gikk galt.</p>
+      <p><a href="/learn" class="btn btn-g localize" data-lang="tryagain">PRØV IGJEN</a></p>
     </div>
   </div>
 </div>

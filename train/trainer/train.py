@@ -21,9 +21,8 @@ import logging
 import os
 import random
 
+import numpy as np
 import tensorflow as tf
-import time
-
 import trainer.model as model
 from trainer.utils import TrainingFeaturesDataReader
 
@@ -44,6 +43,8 @@ class DataSet(object):
         data = reader.read_features()
         uris = reader.read_feature_metadata('image_uri')
         labels = reader.read_labels()
+        # print(data[0],  data[1], uris, labels)
+
         return cls(data[0], data[1], uris, labels)
 
     def n_samples(self):
@@ -85,11 +86,13 @@ class TrainingConfig(object):
 
 
 class Trainer(object):
-    def __init__(self, train_config, model_params, train_dir, log_dir):
+    def __init__(self, train_config, model_params, train_dir, log_dir, plot_dir, test_dir=None):
         self.train_config = train_config
         self.model_params = model_params
+        self.test_dir = test_dir
         self.train_dir = train_dir
         self.log_dir = log_dir
+        self.plot_dir = plot_dir
 
         self.model = model.TransferModel.from_model_params(self.model_params)
         self.train_op = self.model.train_op(self.train_config.optimizer)
@@ -105,9 +108,9 @@ class Trainer(object):
     def _epoch_log_path(self, num_epoch):
         return os.path.join(self.log_dir, 'epochs', '{}.json'.format(str(num_epoch).zfill(6)))
 
-    def train(self, dataset):
-        n_samples = dataset.n_samples()
+    def train(self, trainingset, testingset=None):
 
+        n_samples = trainingset.n_samples()
         logger.info('Build transfer network.')
 
         logger.info('Start training.')
@@ -119,48 +122,70 @@ class Trainer(object):
 
         loss_log = []
         with tf.Session() as sess:
-            summary_writer = tf.train.SummaryWriter(self.log_dir, graph=sess.graph)
+            summary_writer = tf.summary.FileWriter(self.log_dir, graph=sess.graph)
             sess.run(tf.initialize_all_variables())
 
+            losses = []
+            accuracies_test = []
+            accuracies_train = []
+            label_accuracy = []
+
+            if (testingset):
+                for i in range(len(testingset.labels)):
+                    label_accuracy.append([])
+
             for epoch in range(self.train_config.epochs):
+
+                num_img_per_label = [0] * len(label_accuracy)
+                num_errors_per_label = [0] * len(label_accuracy)
+
                 # Shuffle data for batching
                 shuffled_idx = list(range(n_samples))
                 random.shuffle(shuffled_idx)
                 for begin_idx in range(0, n_samples, self.train_config.batch_size):
                     batch_idx = shuffled_idx[begin_idx: begin_idx + self.train_config.batch_size]
-                    sess.run(self.train_op, self.model.feed_for_training(*dataset.get(batch_idx)))
+                    sess.run(self.train_op, self.model.feed_for_training(*trainingset.get(batch_idx)))
 
                 # Print and write summaries.
                 in_sample_loss, summary = sess.run(
                     [self.model.loss_op, self.model.summary_op],
-                    self.model.feed_for_training(*dataset.all())
+                    self.model.feed_for_training(*trainingset.all())
                 )
+
                 loss_log.append(in_sample_loss)
+                losses.append(in_sample_loss)
 
                 summary_writer.add_summary(summary, epoch)
 
                 if epoch % 100 == 0 or epoch == self.train_config.epochs - 1:
                     logger.info('{}th epoch end with loss {}.'.format(epoch, in_sample_loss))
 
-                if self._needs_logging(loss_log):
+                # -------- Accuracy for training set:
+
+                if trainingset:
                     features = sess.run(
                         [self.model.softmax_op],
-                        self.model.feed_for_training(*dataset.all())
+                        self.model.feed_for_training(*trainingset.all())  # feed training data
                     )
 
                     # write loss and predicted probabilities
-                    probs = map(lambda a: a.tolist(), features[0])
+                    probs = list(map(lambda a: a.tolist(), features[0]))
+                    averageAccuracy = 0
                     max_l = max(loss_log)
                     loss_norm = [float(l) / max_l for l in loss_log]
-                    with tf.gfile.FastGFile(self._epoch_log_path(epoch), 'w') as f:
+                    with tf.gfile.FastGFile(self._epoch_log_path(epoch + 1000), 'w') as f:
                         data = {
-                            'epoch': epoch,
+                            'epoch': epoch + 1000,
                             'loss': loss_norm,
                         }
                         probs_with_uri = []
+                        correctCount = 0
 
                         for i, p in enumerate(probs):
-                            meta = dataset.get_meta(i)
+                            meta = trainingset.get_meta(i)  # metadata for training
+                            predicted = np.argmax(p)
+                            if predicted == int(meta['lid']):
+                                correctCount += 1
                             item = {
                                 'probs': p,
                                 'url': meta['url'],
@@ -171,12 +196,78 @@ class Trainer(object):
                             }
                             probs_with_uri.append(item)
 
+                        averageAccuracy += correctCount / len(probs)
+                        accuracies_train.append(averageAccuracy)
                         data['probs'] = probs_with_uri
                         f.write(json.dumps(data))
 
-                # FIXME: sleep to show convergence slowly on UI
-                if epoch < 200 and loss_log[-1] > max(loss_log) * 0.01:
-                    time.sleep(self._sleep_sec)
+                # -------- Accuracy for test set:
+
+                if (testingset):
+                    features = sess.run(
+                        [self.model.softmax_op],
+                        self.model.feed_for_training(*testingset.all())  # feed testing data ---------not training
+                    )
+
+                    # write loss and predicted probabilities Test
+                    probs = list(map(lambda a: a.tolist(), features[0]))
+                    averageAccuracy = 0
+                    max_l = max(loss_log)
+                    loss_norm = [float(l) / max_l for l in loss_log]
+
+                    with tf.gfile.FastGFile(self._epoch_log_path(epoch), 'w') as f:
+                        data = {
+                            'epoch': epoch,
+                            'loss': loss_norm,
+                        }
+                        probs_with_uri = []
+                        correctCount = 0
+
+                        for i, p in enumerate(probs):
+                            meta = testingset.get_meta(i)  # metadata for testing
+                            num_img_per_label[(meta['lid'])] += 1
+                            predicted = np.argmax(p)
+                            if predicted == int(meta['lid']):
+                                correctCount += 1
+                            else:
+                                num_errors_per_label[meta['lid']] += 1
+                                # print('error on ', meta['url'], ' with label ', meta['label'], 'thought it was ', testingset.labels[predicted])
+
+                            item = {
+                                'probs': p,
+                                'url': meta['url'],
+                                'property': {
+                                    'label': meta['label'],
+                                    'lid': int(meta['lid'])
+                                }
+                            }
+                            probs_with_uri.append(item)
+
+                        averageAccuracy += correctCount / len(probs)
+                        accuracies_test.append(averageAccuracy)
+                        data['probs'] = probs_with_uri
+                        f.write(json.dumps(data))
+
+                for i in range(len(label_accuracy)):
+                    print('fails on', num_errors_per_label[i], 'out of ', num_img_per_label[i], 'images of ',
+                          testingset.labels[i])
+
+                    if (num_errors_per_label[i] != 0):
+                        label_accuracy[i].append(100 - (num_errors_per_label[i] / num_img_per_label[i]) * 100)
+                        print('gives accuracy ', 100 - (num_errors_per_label[i] / num_img_per_label[i]) * 100)
+                    elif ((num_errors_per_label[i] == 0) and (num_img_per_label != 0)):
+                        label_accuracy[i].append(100)
+                        print('gives accuracy ', 100)
+                    else:
+                        label_accuracy[i].append(0)
+                        print('gives accuracy ', 0)
+
+            # FIXME: sleep to show convergence slowly on UI
+            # if epoch < 200 and loss_log[-1] > max(loss_log) * 0.01:
+            #     time.sleep(self._sleep_sec)
+
+            if testingset:
+                self.export_plot_data(losses, accuracies_train, accuracies_test, label_accuracy, testingset.labels)
 
             self.model.saver.save(sess, checkpoint_path, global_step=self.model.global_step)
             summary_writer.close()
@@ -192,12 +283,38 @@ class Trainer(object):
             self._last_logged_loss = loss
             return True
 
-        loss_change_rate = loss/self._last_logged_loss
+        loss_change_rate = loss / self._last_logged_loss
         if 1 - loss_change_rate > self._threshold:
             self._last_logged_loss = loss
             return True
 
         return False
+
+    def export_plot_data(self, losses, accuracy_train, accuracy_test, accuracy_per_label, labels):
+        with tf.gfile.FastGFile(os.path.join(self.plot_dir, "plot_data.json"), 'w') as f:
+            f.write(json.dumps({
+                'losses': losses,
+                'accuracy_train': accuracy_train,
+                'accuracy_test': accuracy_test,
+                'accuracy_per_label': accuracy_per_label,
+                'labels': labels
+            }, cls=NumpyEncoder))
+
+
+class NumpyEncoder(json.JSONEncoder):
+    """ Special json encoder for numpy types """
+
+    def default(self, obj):
+        if isinstance(obj, (np.int_, np.intc, np.intp, np.int8,
+                            np.int16, np.int32, np.int64, np.uint8,
+                            np.uint16, np.uint32, np.uint64)):
+            return int(obj)
+        elif isinstance(obj, (np.float_, np.float16, np.float32,
+                              np.float64)):
+            return float(obj)
+        elif isinstance(obj, (np.ndarray,)):  #### This is the fix
+            return obj.tolist()
+        return json.JSONEncoder.default(self, obj)
 
 
 def main(_):
@@ -209,39 +326,41 @@ def main(_):
 
     parser = argparse.ArgumentParser(description='Run Dobot WebAPI.')
     parser.add_argument('--batch_size', type=int, default=16)
-    parser.add_argument('--hidden_size', type=int, default=3, help="Number of units in hidden layer.")
-    parser.add_argument('--epochs', type=int, default=2000, help="Number of epochs of training")
+    parser.add_argument('--hidden_size', type=int, default=7, help="Number of units in hidden layer.")
+    parser.add_argument('--epochs', type=int, default=50, help="Number of epochs of training")
     parser.add_argument('--learning_rate', type=float, default=1e-3)
-    parser.add_argument('--data_dir', type=str, default='data', help="Directory for training data.")
+    parser.add_argument('--keep_prob', type=float, default=1.0)
+    parser.add_argument('--active_test_mode', default=False, action='store_true', help='Set True for testing')
+    parser.add_argument('--data_dir', type=str, default='output', help="Directory for training data.")
+    parser.add_argument('--test_dir', type=str, default='output', help="Directory for test data.")
     parser.add_argument('--log_dir', type=str, default='log', help="Directory for TensorBoard logs.")
     parser.add_argument('--train_dir', type=str, default='train', help="Directory for checkpoints.")
+    parser.add_argument('--plot_dir', type=str, default='plots', help="Directory for accuracy plot data")
 
     args = parser.parse_args()
 
     data_dir = args.data_dir
-    reader = TrainingFeaturesDataReader(data_dir)
+    readerTrain = TrainingFeaturesDataReader(data_dir, features_file_name='features.json')
+    trainingset = DataSet.from_reader(readerTrain)
+    testingset = None
 
-    dataset = DataSet.from_reader(reader)
+    if (args.active_test_mode):
+        test_dir = args.test_dir
+        readerTest = TrainingFeaturesDataReader(test_dir, features_file_name='testfeatures.json')
+        testingset = DataSet.from_reader(readerTest)
 
     train_config = TrainingConfig(
-        epochs=2000,
-        batch_size=16,
+        epochs=args.epochs,
+        batch_size=args.batch_size,
         optimizer_class=tf.train.RMSPropOptimizer,
-        optimizer_args={"learning_rate": 1e-3},
-        keep_prob=1.0,
+        optimizer_args={"learning_rate": args.learning_rate},
+        keep_prob=args.keep_prob,
     )
 
     params = model.ModelParams(
-        labels=dataset.labels,
+        labels=trainingset.labels,
         hidden_size=args.hidden_size,
-        features_size=dataset.feature_size()
-    )
-
-    trainer = Trainer(
-        train_config=train_config,
-        model_params=params,
-        train_dir=args.train_dir,
-        log_dir=args.log_dir,
+        features_size=trainingset.feature_size()
     )
 
     if not tf.gfile.Exists(args.train_dir):
@@ -250,13 +369,34 @@ def main(_):
     if not tf.gfile.Exists(args.log_dir):
         tf.gfile.MakeDirs(args.log_dir)
 
+    if not tf.gfile.Exists(args.plot_dir):
+        tf.gfile.MakeDirs(args.plot_dir)
+
     with tf.gfile.FastGFile(os.path.join(args.train_dir, 'params.json'), 'w') as f:
         f.write(params.to_json())
 
     with tf.gfile.FastGFile(os.path.join(args.log_dir, 'training.json'), 'w') as f:
         f.write(train_config.to_json())
 
-    trainer.train(dataset)
+    if args.active_test_mode:
+        trainer = Trainer(
+            train_config=train_config,
+            model_params=params,
+            train_dir=args.train_dir,
+            log_dir=args.log_dir,
+            plot_dir=args.plot_dir,
+            test_dir=args.test_dir
+        )
+        trainer.train(trainingset, testingset)
+    else:
+        trainer = Trainer(
+            train_config=train_config,
+            model_params=params,
+            train_dir=args.train_dir,
+            log_dir=args.log_dir,
+            plot_dir=args.plot_dir
+        )
+        trainer.train(trainingset)
 
 
 if __name__ == '__main__':

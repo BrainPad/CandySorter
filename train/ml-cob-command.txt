@@ -1,0 +1,19 @@
+gcloud ml-engine jobs submit training {job_name} ^
+--module-name=trainer.train ^
+--scale-tier=basic ^
+--packages=gs://cx_robotas/current/package/trainer-0.0.0.tar.gz ^
+--python-version=3.5 ^
+--region=us-central1 ^
+--runtime-version=1.8 ^
+--project=cx-robotas ^
+-- ^
+--data_dir=gs://cx_robotas/current/gamma_augmented/output ^
+--test_dir=gs://cx_robotas/current/gamma_augmented/output ^
+--log_dir=gs://cx_robotas/{job_name}/logs ^
+--train_dir=gs://cx_robotas/{job_name}/train ^
+--plot_dir=gs://cx_robotas/{job_name}/plots ^
+--active_test_mode ^
+--epochs=400 ^
+--keep_prob=0.3 ^
+--hidden_size=7 ^
+--batch_size=16 

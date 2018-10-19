@@ -25,6 +25,13 @@ opacity: 0;
 transform: scale(0);
 }
 }
+/* tran loaded */
+.mode-tran-loaded .speech{ opacity: 0; transform: translate(-100px, 0); }
+.mode-tran-finish .tran{opacity: 0; transform: translate(-100px, 0);}
+.general-header {opacity: 0;}
+.tran-word { opacity: 0; transform: translate(100px, 0); transition: none; }
+.mode-tran-loaded .general-header {opacity: 1;}
+.mode-tran-loaded .tran-word { opacity: 1; transform: translate(0, 0); transition: all .4s; }
 /* nl loaded */
 .nl-inner { transition: none; }
 .nl-word { opacity: 0; transform: translate(100px, 0); transition: none; }
@@ -40,30 +47,45 @@ transform: scale(0);
 .mode-nl-repeat .nl-inner { opacity: 0; transition: all .4s; }
 /* nl  */
 .nl { transition: all .3s; }
-.mode-force-start .nl { opacity: 0; transform: scale(0.5); }
+.mode-force-start .nl { opacity: 0; transform: scale(0.5); } /* Hide nl when force starts */
 /* force */
 .force { transition: all .3s; }
-.mode-plot-end .force { opacity: 0; transform: scale(0); }
+.mode-plot-end .force { opacity: 0; transform: scale(0); } /* Hide force when plot is over */
 /* plot */
 .plot dd { transform: scale(0); transition: all .3s cubic-bezier(0.175, 0.885, 0.32, 1.275); ; }
 .mode-plot-start .plot dd { transform: scale(1); }
 .mode-plot-end .plot dd { transform: scale(0); transition-delay: 0s!important; }
-.mode-plot-end .plot dd.nearest { transform: scale(5); opacity: 1; transition: all .3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+/*.mode-plot-end .plot dd.nearest { transform: scale(5); opacity: 1; transition: all .3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+*/
 .plot dd { animation: plot 1s infinite alternate; }
 @keyframes plot {
 0% {
-opacity: 0.6;
-}
-50%, 100% {
-opacity: 0.8;
-}
+    opacity: 0.6;
+    }
+    50%, 100% {
+    opacity: 0.8;
+    }
 }
 .mode-stat-end .plot dd { opacity: 0.8; animation: none; }
 /* cam */
 .cam { opacity: 0; transform: scale(0.8); transition: all .3s; }
 .mode-cam-start .cam { opacity: 1; transform: scale(1); }
+.mode-cam-start .delay {opacity: 0; }
+.mode-cam-start text { opacity: 0; }
 .mode-cam-start .plot dd.nearest { opacity: 0; transform: scale(0); }
-.mode-cam-start polygon { animation: cam 100s linear forwards; }
+.mode-cam-start polygon { animation: cam 200s linear forwards; }
+
+.mode-cam-mid .delay {opacity: 1; transform: scale(1); transition-delay: 1s!important; transition-duration: 1s;}
+.mode-cam-mid text { opacity: 1; transform: scale(1); transition-delay: 1s!important; transition-duration: 1s;}
+
+.mode-cam-end circle {opacity: 0; transform: scale(0);  transition-duration: .5s;}
+.mode-cam-end text { opacity: 0; transform: scale(0); transition-duration: .5s;}
+.mode-cam-end polygon { opacity: 0; transform: scale(0); transition-duration: .5s;}
+
+.mode-cam-finished polygon { opacity: 1; transform: scale(1); transition-duration: 1s;}
+.mode-cam-finished text { opacity: 1; transform: scale(1); transition-duration: 1s;}
+.mode-cam-finished circle { opacity: 1; transform: scale(1); transition-duration: 1s;}
+
 @keyframes cam {
 0% {
 stroke-dashoffset: 10000;
@@ -73,15 +95,10 @@ stroke-dashoffset: 0;
 }
 }
 /* thanks  */
-.thanks { height: 0; }
-.thanks div { opacity: 0; transform: translate(100px, 0); transition: all .3s; }
+.thanks { opacity: 0; }
 .mode-thanks-start .thanks { height: 100%; }
-.mode-thanks-start .cam { opacity: 0; }
-.mode-thanks-start .thanks div:nth-child(1) { opacity: 1; transform: translate(0, 0); }
-.mode-thanks-end .thanks div:nth-child(1) { opacity: 0; transform: translate(-100px, 0); }
-.mode-thanks-end .thanks div:nth-child(2) { opacity: 1; transform: translate(0, 0); }
-.mode-thanks-btn .thanks div:nth-child(2) { opacity: 0; transform: translate(-100px, 0); }
-.mode-thanks-btn .thanks div:nth-child(3) { opacity: 1; transform: translate(0, 0); }
+.mode-thanks-start .cam { opacity: 0; transform: scale(0); transition-duration: .5s;}
+.mode-thanks-start .thanks { opacity: 1; transform: translate(0, 0); }
 /* sorry  */
 .sorry { height: 0; opacity: 0; }
 .mode-sorry-p .speech,
@@ -162,3 +179,72 @@ stroke-dashoffset: 0;
 .mode-sorry-t-start .cap,
 .mode-sorry-t-start .train { height: 0; opacity: 0; }
 .mode-sorry-t-end .sorry { height: 100%; opacity: 1; }
+
+
+@keyframes blinking {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+@keyframes hand {
+    0% {
+        bottom: 10%;
+        right: 35%;
+        opacity:0;
+        transform: translatex(350px) translatey(50px);
+        -webkit-animation-timing-function: ease-in;
+        animation-delay: 5s;
+    }
+    45% {
+        transform: translatex(-100px) translatey(-120px);
+        opacity:.6;
+        -webkit-animation-timing-function: ease-out;
+    }
+    55%{
+        transform: perspective(500px) translatex(-100px) translatey(-120px) translateZ(-50px);
+        opacity: .8;
+    }
+    65% {
+        transform: translatex(-100px) translatey(-120px);
+        opacity: .8;
+    }
+    75%{
+        opacity: .5;
+    }
+    100% {
+        bottom:10%;
+        right: 35%;
+        opacity: 0;
+        transform: translatex(350px) translatey(50px);
+    }
+}
+
+@keyframes blink {
+
+    0% {
+        opacity: .2;
+    }
+    20% {
+        opacity: 1;
+    }
+    100% {
+        opacity: .2;
+    }
+}
+
+/* PROGRESS RADIAL */
+@keyframes progress {
+    from {
+        stroke-dashoffset: 109.9;
+    }
+    to {
+        stroke-dashoffset: 0;
+    }
+}

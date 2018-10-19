@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="no">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Settings</title>
+    <link href="/static/js/manifest.json" rel="manifest">
+    <link href="https://fonts.googleapis.com/css?family=Roboto:100,300" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Open+Sans" />
+    <link href="/static/css/settings.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+
+    <script src="/static/js/config.js"></script>
+    <script src="/static/js/settings.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="predict">
+                <img height="35px" src="static/images/branding/arrow-circle-left-solid.png">
+            </a>
+        </div>
+        <div class="status">
+            <div class="status-header">
+                <h1 class="localize" data-lang="statustext"></h1>
+            </div>
+            <div class="flex-container">
+                <div>
+                    <img src="static/images/branding/wifi-solid.png" />
+                    <p id="OKconn">...</p>
+                </div>
+                <div>
+                    <img src="static/images/branding/robot-solid.png" />
+                    <p id="OKrob">...</p>
+                </div>
+                <div>
+                    <img src="static/images/branding/camera-solid.png" />
+                    <p id="OKcam">...</p>
+                </div>
+            </div>
+        </div>
+        <div class="settings">
+            <div class="settings-header">
+                <h1 class="localize" data-lang="settingstext"></h1>
+            </div>
+            <div class="grid-container">
+                <div class="localize" data-lang="speechlangtext"></div>
+                <div class="select">
+                    <select id="speech-lang" name="voice-lang">
+                        <option value="no" class="localize" data-lang="langselNO">Norsk</option>
+                        <option value="en" class="localize" data-lang="langselEN">Engelsk</option>
+                    </select>
+                    <div class="select_arrow"></div>
+                </div>
+                <div class="localize" data-lang="uilangtext">Visningsspråk</div>
+                <div class="select">
+                    <select id="ui-lang" name="uiLang">
+                        <option value="no" class="localize" data-lang="langselNO">Norsk</option>
+                        <option value="en" class="localize" data-lang="langselEN">Engelsk</option>
+                    </select>
+                    <div class="select_arrow"></div>
+                </div>
+            </div>
+            <div class="edit">
+                <p class="localize" data-lang="edittext"></p>
+                <form>
+                    <textarea id="thanks-text"></textarea>
+                    <br>
+                </form>
+                <button class="sendbutton" id="end-text-button">Ok</button>
+            </div>
+            <div class="edit">
+                <p class="localize" data-lang="timeouttext">Endre timeouts (i millisekunder, minimum 1000)</p>
+                <div class="timeouts-container">
+                    <div class="timeout-setting">
+                        <p>Translate</p>
+                        <img src="/static/images/translate.png" alt=""><input type="text" name="" id="tranTimeoutInput">
+                    </div>
+                    <div class="timeout-setting">
+                        <p>NL</p>
+                        <img src="/static/images/nl.png" alt=""><input type="text" name="" id="nlTimeoutInput">
+                    </div>
+                    <div class="timeout-setting">
+                        <p>Force</p>
+                        <img src="/static/images/force.png" alt=""><input type="text" name="" id="forceTimeoutInput">
+                    </div>
+                    <div class="timeout-setting">
+                        <p>Camera</p>
+                        <img src="/static/images/cam.png" alt=""><input type="text" name="" id="camTimeoutInput">
+                    </div>
+                    <div class="timeout-setting">
+                        <p>Select</p>
+                        <img src="/static/images/select.png" alt=""><input type="text" name="" id="selTimeoutInput">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="settings">
+            <div class="settings-header">
+                <h1 class="localize" data-lang="resetheadertext">Escape zone</h1>
+            </div>
+            <p class="localize" data-lang="resettext">Tilbakestill innstillingene til standardverdier:</p>
+            <button class="sendbutton localize" id="reset-btn" data-lang="resetbtntext">Tilbakestill </button>
+        </div>
+        <div class="help">
+            <div class="help-header">
+                <h1 class="localize" data-lang="helpheadertext">Hjelp/Troubleshooting</h1>
+            </div>
+            <div class="help-inner">
+                <a href="https://github.com/SindreSB/FindYourCandy/blob/master/README.md" target="_blank">Readme</a>
+            </div>
+        </div>
+        <div>
+            <h1 class="localize" data-lang="modetext">Skift modus</h1>
+            <a href="/learn" class="localize" data-lang="modemltext">Maskinlæring</a>
+        </div>
+    </div>
+</body>
+
+</html>

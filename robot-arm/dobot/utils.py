@@ -33,9 +33,10 @@ def detect_dobot_port(baudrate):
 
 def detect_ports(baudrate):
     port_prefix = '/dev/ttyUSB'
+    all_ports = [port_prefix + str(i) for i in range(5)]
+    all_ports.extend(["COM" + str(i) for i in range(5)])
     found_ports = []
-    for i in range(5):
-        port = port_prefix + str(i)
+    for port in all_ports:
         logger.debug('scanning port: {}'.format(port))
         try:
             s = serial.Serial(port, baudrate, timeout=1)
@@ -50,7 +51,7 @@ def dobot_is_on_port(port, baudrate):
     try:
         ser = SerialCommunicator(port, baudrate)
         ser.call(command.GetPose())
-    except IOError as e:
+    except Exception as e:
         print(e)
         return False
     return True

@@ -19,11 +19,12 @@ import argparse
 import json
 import logging
 
+import numpy
 import numpy as np
 import tensorflow as tf
 
-import trainer.model as model
-from trainer.utils import FeaturesDataReader
+import model as model
+from utils import FeaturesDataReader
 
 logger = logging.getLogger(__name__)
 
@@ -60,20 +61,23 @@ class Predictor(object):
         return label_ids, prob
 
     def predict_to_json(self):
+        print(self.result_to_json(*self.predict()))
         return self.result_to_json(*self.predict())
+
 
     def result_to_json(self, label_ids, prob):
         result = []
         image_urls = self.data_reader.read_feature_metadata('image_uri')
-        for i in xrange(len(label_ids)):
-            lid = label_ids[i]
+        for i in range(len(label_ids)):
+            lid = int(label_ids[i])
             result.append({
                 "url": image_urls[i],
                 "top_lid": lid,
                 "top_label": self.model_params.labels[lid],
-                "probs": prob[i].tolist()
+                "probs": list(np.float64(prob[i]))
             })
-        return json.dumps(result)
+        print(list(result))
+        return json.dumps(list(result))
 
 
 def main(_):
@@ -84,13 +88,12 @@ def main(_):
     logger.info('tf version: {}'.format(tf.__version__))
 
     parser = argparse.ArgumentParser(description='Run Dobot WebAPI.')
-    parser.add_argument('--data_dir', type=str, default='data', help="Directory for training data.")
+    parser.add_argument('--data_dir', type=str, default='output', help="Directory for training data.")
     parser.add_argument('--train_dir', type=str, default='train', help="Directory for checkpoints.")
 
     args = parser.parse_args()
 
-    reader = FeaturesDataReader(args.data_dir)
-
+    reader = FeaturesDataReader(args.data_dir, 'trainfeatures.json')
     predictor = Predictor(reader, args.train_dir, args.train_dir+'/params.json')
     print(predictor.predict_to_json())
 

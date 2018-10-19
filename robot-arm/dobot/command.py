@@ -102,7 +102,7 @@ class PacketParser(object):
 
 
 def checksum(payload):
-    return 0xFF & (0x100 - (sum([ord(c) for c in payload])))
+    return 0xFF & (0x100 - (sum([c for c in payload])))
 
 
 def ctrl(rw, is_queued):
@@ -129,7 +129,9 @@ class GetPose(Command):
 
 class GetAlarmsState(Command):
     def __init__(self):
-        super(GetAlarmsState, self).__init__(20, 0, 0)
+        super(GetAlarmsState, self).__init__(
+            20, 0, 0, '16B'
+        )
 
 
 class ClearAllAlarmsState(Command):
@@ -197,6 +199,29 @@ class SetEndEffectorSuctionCup(Command):
     def __init__(self, is_ctrl_enabled, is_sucked):
         super(SetEndEffectorSuctionCup, self).__init__(62, 1, 1)
         self.params = struct.pack('<BB', is_ctrl_enabled, is_sucked)
+
+
+class SetEndEffectorGripper(Command):
+    def __init__(self, is_ctrl_enabled, is_gripped):
+        super(SetEndEffectorGripper, self).__init__(63, 1, 1)
+        self.params = struct.pack('<BB', is_ctrl_enabled, is_gripped)
+
+
+"""
+Enable stepper motor. While protocal says that speed is a float, it is an int. 
+10000 will give approx 62mm/s, which is below 100mm/s (max) and not too far from
+50-60mm/s which has been recommended by Dobot support. 
+"""
+class SetEMotor(Command):
+    def __init__(self, index, isEnabled, speed, is_queued=True):
+        params_fmt = None
+        params_name = None
+        if is_queued:
+            params_fmt = 'Q'
+            params_name = ['queuedCmdIndex']
+
+        super(SetEMotor, self).__init__(135, 1, 1 if is_queued else 0, params_fmt, params_name)
+        self.params = struct.pack('<BBi', index, isEnabled, speed)
 
 
 class SetQueuedCmdStartExec(Command):
